@@ -1,5 +1,7 @@
 package com.openmausbot.companion.ui
 
+import com.openmausbot.companion.core.L10n
+
 import android.content.ClipData
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -206,7 +208,7 @@ fun DiffCard(card: TranscriptCard.Diff, modifier: Modifier = Modifier) {
         HorizontalDivider(color = secondaryTint.copy(alpha = 0.2f))
 
         TextButton(onClick = { copy(card.text) }) {
-            Text("Copy Diff", fontSize = 13.sp)
+            Text(L10n.s("Copy Diff"), fontSize = 13.sp)
         }
     }
 }
@@ -290,7 +292,7 @@ fun DataTableCard(card: TranscriptCard.Table, modifier: Modifier = Modifier) {
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
-                text = "DATA TABLE",
+                text = L10n.s("DATA TABLE"),
                 fontSize = 12.sp,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.primary,
@@ -320,7 +322,7 @@ fun DataTableCard(card: TranscriptCard.Table, modifier: Modifier = Modifier) {
         HorizontalDivider(color = secondaryTint.copy(alpha = 0.2f))
 
         TextButton(onClick = { copy(card.csv()) }) {
-            Text("Copy CSV", fontSize = 13.sp)
+            Text(L10n.s("Copy CSV"), fontSize = 13.sp)
         }
     }
 }

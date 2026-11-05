@@ -1,5 +1,7 @@
 package com.openmausbot.companion.ui
 
+import com.openmausbot.companion.core.L10n
+
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -363,7 +365,7 @@ private fun ShareSheetContent(
             ) {
                 HeaderBackButton(onBack = { if (canCancel) cancel() })
                 Column(modifier = Modifier.weight(1f)) {
-                    Text("Send to OpenMausBot", fontSize = 17.sp, fontWeight = FontWeight.SemiBold)
+                    Text(L10n.s("Send to OpenMausBot"), fontSize = 17.sp, fontWeight = FontWeight.SemiBold)
                     Text(headerSubtitle(phase), color = secondaryTint, fontSize = 13.sp)
                 }
                 if (phase == ShareSheetPhase.SENDING) {
@@ -384,7 +386,7 @@ private fun ShareSheetContent(
                             modifier = Modifier.padding(16.dp),
                             verticalArrangement = Arrangement.spacedBy(8.dp),
                         ) {
-                            Text("SHARING", fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = secondaryTint)
+                            Text(L10n.s("SHARING"), fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = secondaryTint)
                             SharePolicy.previewChip(preview).forEach { label ->
                                 Text(label, fontSize = 15.sp)
                             }
@@ -400,7 +402,7 @@ private fun ShareSheetContent(
                 }
 
                 if (computers.isNotEmpty()) {
-                    Text("COMPUTER", fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = secondaryTint)
+                    Text(L10n.s("COMPUTER"), fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = secondaryTint)
                     TextButton(
                         onClick = { choosingComputer = true },
                         enabled = (phase == ShareSheetPhase.READY || phase == ShareSheetPhase.FAILED) && computers.size > 1,
@@ -414,7 +416,7 @@ private fun ShareSheetContent(
                 }
 
                 if (destinations.isNotEmpty()) {
-                    Text("SEND TO", fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = secondaryTint)
+                    Text(L10n.s("SEND TO"), fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = secondaryTint)
                     TextButton(
                         onClick = { choosingDestination = true },
                         enabled = canEdit,
@@ -427,7 +429,7 @@ private fun ShareSheetContent(
                                     fontWeight = FontWeight.SemiBold,
                                 )
                                 if (selectedDestinationId != null && selectedDestinationId == rememberedDestinationId) {
-                                    Text("LAST USED", fontSize = 11.sp, color = MaterialTheme.colorScheme.primary)
+                                    Text(L10n.s("LAST USED"), fontSize = 11.sp, color = MaterialTheme.colorScheme.primary)
                                 }
                             }
                             selectedDestination?.subtitle?.let {
@@ -444,8 +446,8 @@ private fun ShareSheetContent(
                             instruction = it
                             pendingDelivery = null
                         },
-                        label = { Text("Instruction (optional)") },
-                        placeholder = { Text("For example: summarize this and list the next steps") },
+                        label = { Text(L10n.s("Instruction (optional)")) },
+                        placeholder = { Text(L10n.s("For example: summarize this and list the next steps")) },
                         enabled = canEdit,
                         minLines = 2,
                         modifier = Modifier.fillMaxWidth(),
@@ -463,7 +465,7 @@ private fun ShareSheetContent(
                 if (phase == ShareSheetPhase.LOADING && preview.isEmpty) {
                     Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
                         CircularProgressIndicator(modifier = Modifier.size(22.dp), strokeWidth = 2.dp)
-                        Text("Reading shared content", color = secondaryTint)
+                        Text(L10n.s("Reading shared content"), color = secondaryTint)
                     }
                 }
             }
@@ -480,7 +482,7 @@ private fun ShareSheetContent(
                 Button(
                     onClick = ::send,
                     enabled = canSend,
-                ) { Text("Send") }
+                ) { Text(L10n.s("Send")) }
             }
         }
     }
@@ -488,7 +490,7 @@ private fun ShareSheetContent(
     if (choosingComputer) {
         AlertDialog(
             onDismissRequest = { choosingComputer = false },
-            title = { Text("Computer") },
+            title = { Text(L10n.s("Computer")) },
             text = {
                 Column {
                     computers.forEach { computer ->
@@ -520,14 +522,14 @@ private fun ShareSheetContent(
                 }
             },
             confirmButton = {},
-            dismissButton = { TextButton(onClick = { choosingComputer = false }) { Text("Cancel") } },
+            dismissButton = { TextButton(onClick = { choosingComputer = false }) { Text(L10n.s("Cancel")) } },
         )
     }
 
     if (choosingDestination) {
         AlertDialog(
             onDismissRequest = { choosingDestination = false },
-            title = { Text("Send to") },
+            title = { Text(L10n.s("Send to")) },
             text = {
                 Column {
                     destinations.forEach { destination ->
@@ -548,15 +550,15 @@ private fun ShareSheetContent(
                 }
             },
             confirmButton = {},
-            dismissButton = { TextButton(onClick = { choosingDestination = false }) { Text("Cancel") } },
+            dismissButton = { TextButton(onClick = { choosingDestination = false }) { Text(L10n.s("Cancel")) } },
         )
     }
 }
 
 private fun headerSubtitle(phase: ShareSheetPhase): String = when (phase) {
-    ShareSheetPhase.LOADING -> "Preparing your share…"
-    ShareSheetPhase.READY -> "Choose where this should go"
-    ShareSheetPhase.SENDING -> "Sending securely…"
-    ShareSheetPhase.SENT -> "Sent"
-    ShareSheetPhase.FAILED -> "Needs your attention"
+    ShareSheetPhase.LOADING -> L10n.s("Preparing your share…")
+    ShareSheetPhase.READY -> L10n.s("Choose where this should go")
+    ShareSheetPhase.SENDING -> L10n.s("Sending securely…")
+    ShareSheetPhase.SENT -> L10n.s("Sent")
+    ShareSheetPhase.FAILED -> L10n.s("Needs your attention")
 }

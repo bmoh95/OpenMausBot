@@ -1,5 +1,7 @@
 package com.openmausbot.companion.ui
 
+import com.openmausbot.companion.core.L10n
+
 import com.openmausbot.companion.core.Connection
 import com.openmausbot.companion.core.Session
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -14,34 +16,23 @@ import kotlinx.coroutines.flow.asStateFlow
  * lock it out (§13). This is a status page with an unpair button.
  */
 object SettingsPolicy {
-    const val NOTIFICATIONS_FOOTER =
-        "Approvals and finished work appear while MausBot is connected, including " +
+    val NOTIFICATIONS_FOOTER: String get() = L10n.s("Approvals and finished work appear while MausBot is connected, including " +
             "frames replayed after a short background pause. Closed-app push needs a " +
-            "separate push-relay release that does not exist yet."
-
-    const val WORKSPACE_FOOTER =
-        "Routine schedules are safe to manage here. Provider keys, webhook secrets, " +
-            "pairing, revocation, Local VM, and agent execution policy stay on your computer."
-
-    const val UNPAIR_FOOTER =
-        "Removes the pairing from this phone only. To stop it reaching the computer at all, " +
-            "remove the device in OpenMausBot → Settings → Phone."
-
-    const val NOT_HERE =
-        "API keys, pairing and the Local VM are managed on the computer. This phone is " +
-            "deliberately not allowed to change them."
-
-    const val UNPAIR_CONFIRM_TITLE = "Unpair this phone?"
-    const val UNPAIR_CONFIRM_MESSAGE = "You'll need a new pairing code to connect again."
-
-    const val EDIT_ADDRESS_MESSAGE =
-        "Enter whatever Phone settings on your computer shows. The pairing itself is kept."
-
+            "separate push-relay release that does not exist yet.")
+    val WORKSPACE_FOOTER: String get() = L10n.s("Routine schedules are safe to manage here. Provider keys, webhook secrets, " +
+            "pairing, revocation, Local VM, and agent execution policy stay on your computer.")
+    val UNPAIR_FOOTER: String get() = L10n.s("Removes the pairing from this phone only. To stop it reaching the computer at all, " +
+            "remove the device in OpenMausBot → Settings → Phone.")
+    val NOT_HERE: String get() = L10n.s("API keys, pairing and the Local VM are managed on the computer. This phone is " +
+            "deliberately not allowed to change them.")
+    val UNPAIR_CONFIRM_TITLE: String get() = L10n.s("Unpair this phone?")
+    val UNPAIR_CONFIRM_MESSAGE: String get() = L10n.s("You'll need a new pairing code to connect again.")
+    val EDIT_ADDRESS_MESSAGE: String get() = L10n.s("Enter whatever Phone settings on your computer shows. The pairing itself is kept.")
     fun statusText(status: Session.Status): String = when (status) {
-        Session.Status.Live -> "Connected"
-        Session.Status.Connecting -> "Connecting…"
-        Session.Status.Unpaired -> "Not paired"
-        Session.Status.Unauthorized -> "Unpaired on the computer"
+        Session.Status.Live -> L10n.s("Connected")
+        Session.Status.Connecting -> L10n.s("Connecting…")
+        Session.Status.Unpaired -> L10n.s("Not paired")
+        Session.Status.Unauthorized -> L10n.s("Unpaired on the computer")
         is Session.Status.Offline -> status.message
     }
 
@@ -56,10 +47,8 @@ object SettingsPolicy {
  * (§7).
  */
 object AddressEdit {
-    const val INVALID =
-        "Enter a secure https:// address, 192.168.1.42:8810, or a name like " +
-            "macbook.tail1234.ts.net."
-
+    val INVALID: String get() = L10n.s("Enter a secure https:// address, 192.168.1.42:8810, or a name like " +
+            "macbook.tail1234.ts.net.")
     /** The same parse `Session.updateAddress` will do, so the form can say no first. */
     fun isValid(text: String): Boolean = Connection.parse(text) != null
 }
@@ -149,15 +138,15 @@ class NotificationPermissionController(
 
     companion object {
         fun statusText(access: NotificationAccess): String = when (access) {
-            NotificationAccess.GRANTED -> "Allowed"
-            NotificationAccess.ASKABLE -> "Not allowed"
-            NotificationAccess.BLOCKED -> "Turned off in system settings"
+            NotificationAccess.GRANTED -> L10n.s("Allowed")
+            NotificationAccess.ASKABLE -> L10n.s("Not allowed")
+            NotificationAccess.BLOCKED -> L10n.s("Turned off in system settings")
         }
 
         fun buttonText(access: NotificationAccess): String = when (access) {
-            NotificationAccess.GRANTED -> "Notifications are on"
-            NotificationAccess.ASKABLE -> "Enable notifications"
-            NotificationAccess.BLOCKED -> "Open notification settings"
+            NotificationAccess.GRANTED -> L10n.s("Notifications are on")
+            NotificationAccess.ASKABLE -> L10n.s("Enable notifications")
+            NotificationAccess.BLOCKED -> L10n.s("Open notification settings")
         }
 
         fun buttonEnabled(access: NotificationAccess): Boolean =

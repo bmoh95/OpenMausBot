@@ -1,5 +1,7 @@
 package com.openmausbot.companion.ui
 
+import com.openmausbot.companion.core.L10n
+
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -175,7 +177,7 @@ fun TaskSheet(
                     )
                     Icon(
                         imageVector = Icons.Filled.Add,
-                        contentDescription = "New thread",
+                        contentDescription = L10n.s("New thread"),
                         tint = if (TaskRules.canCreate(current)) {
                             MaterialTheme.colorScheme.onSurface
                         } else {
@@ -316,7 +318,7 @@ fun TaskSheet(
                         .padding(horizontal = 12.dp),
                     horizontalArrangement = Arrangement.End,
                 ) {
-                    TextButton(onClick = onDismiss, enabled = !saving) { Text("Done") }
+                    TextButton(onClick = onDismiss, enabled = !saving) { Text(L10n.s("Done")) }
                 }
             }
         }
@@ -367,9 +369,9 @@ fun TaskSheet(
                             }
                         }
                     }
-                }) { Text("Delete", color = MaterialTheme.colorScheme.error) }
+                }) { Text(L10n.s("Delete"), color = MaterialTheme.colorScheme.error) }
             },
-            dismissButton = { TextButton(enabled = !saving, onClick = { pendingDelete = null; error = null }) { Text("Cancel") } },
+            dismissButton = { TextButton(enabled = !saving, onClick = { pendingDelete = null; error = null }) { Text(L10n.s("Cancel")) } },
         )
     }
 
@@ -388,7 +390,7 @@ fun TaskSheet(
                         Text(it, color = MaterialTheme.colorScheme.error)
                     }
                     if (working) {
-                        Text("Stop this thread before snoozing it.", color = secondaryTint)
+                        Text(L10n.s("Stop this thread before snoozing it."), color = secondaryTint)
                     } else {
                         SnoozeRules.presets.forEach { preset ->
                             TextButton(
@@ -436,7 +438,7 @@ fun TaskSheet(
             confirmButton = {},
             dismissButton = {
                 TextButton(enabled = !saving, onClick = { pendingSnooze = null; error = null }) {
-                    Text("Cancel")
+                    Text(L10n.s("Cancel"))
                 }
             },
         )
@@ -610,6 +612,6 @@ private fun TaskTitleDialog(
         confirmButton = {
             TextButton(onClick = onConfirm, enabled = confirmEnabled) { Text(confirmText) }
         },
-        dismissButton = { TextButton(onClick = onCancel) { Text("Cancel") } },
+        dismissButton = { TextButton(onClick = onCancel) { Text(L10n.s("Cancel")) } },
     )
 }

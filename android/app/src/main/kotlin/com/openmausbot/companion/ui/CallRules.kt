@@ -1,5 +1,7 @@
 package com.openmausbot.companion.ui
 
+import com.openmausbot.companion.core.L10n
+
 import com.openmausbot.companion.core.Message
 
 /** Where a call is — `CallView.Phase` on iOS. */
@@ -38,10 +40,10 @@ object CallRules {
     const val ENDPOINT_GAP_MILLIS: Long = 850L
 
     fun phaseText(phase: CallPhase, name: String): String = when (phase) {
-        CallPhase.LISTENING -> "Listening…"
-        CallPhase.SENDING -> "Sending…"
+        CallPhase.LISTENING -> L10n.s("Listening…")
+        CallPhase.SENDING -> L10n.s("Sending…")
         CallPhase.WORKING -> "$name is working…"
-        CallPhase.SPEAKING -> "Speaking"
+        CallPhase.SPEAKING -> L10n.s("Speaking")
     }
 
     fun noVoiceNote(name: String): String = "Set up a voice in Settings → Voice to hear $name."

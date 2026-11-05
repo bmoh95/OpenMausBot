@@ -1,5 +1,7 @@
 package com.openmausbot.companion.ui
 
+import com.openmausbot.companion.core.L10n
+
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Arrangement
@@ -51,7 +53,7 @@ fun QuickRepliesEditor(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Quick replies") },
+        title = { Text(L10n.s("Quick replies")) },
         text = {
             Column(
                 modifier = Modifier.verticalScroll(rememberScrollState()),
@@ -79,20 +81,20 @@ fun QuickRepliesEditor(
                                     overflow = TextOverflow.Ellipsis,
                                 )
                             }
-                            TextButton(onClick = { editing = reply }) { Text("Edit") }
+                            TextButton(onClick = { editing = reply }) { Text(L10n.s("Edit")) }
                         }
                         Row(horizontalArrangement = Arrangement.spacedBy(2.dp)) {
                             TextButton(
                                 enabled = index > 0,
                                 onClick = { preferences.setQuickReplies(replies.move(index, index - 1)) },
-                            ) { Text("Move up") }
+                            ) { Text(L10n.s("Move up")) }
                             TextButton(
                                 enabled = index < replies.lastIndex,
                                 onClick = { preferences.setQuickReplies(replies.move(index, index + 1)) },
-                            ) { Text("Move down") }
+                            ) { Text(L10n.s("Move down")) }
                             TextButton(
                                 onClick = { preferences.setQuickReplies(replies.filterNot { it.id == reply.id }) },
-                            ) { Text("Remove") }
+                            ) { Text(L10n.s("Remove")) }
                         }
                         HorizontalDivider()
                     }
@@ -101,7 +103,7 @@ fun QuickRepliesEditor(
         },
         confirmButton = {
             Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                TextButton(onClick = { adding = true }) { Text("Add") }
+                TextButton(onClick = { adding = true }) { Text(L10n.s("Add")) }
                 // Discards the list the user built: `Button(role: .destructive)`
                 // in `ios/App/QuickRepliesEditor.swift:97`.
                 TextButton(
@@ -109,8 +111,8 @@ fun QuickRepliesEditor(
                     colors = ButtonDefaults.textButtonColors(
                         contentColor = MaterialTheme.colorScheme.error,
                     ),
-                ) { Text("Reset") }
-                TextButton(onClick = onDismiss) { Text("Done") }
+                ) { Text(L10n.s("Reset")) }
+                TextButton(onClick = onDismiss) { Text(L10n.s("Done")) }
             }
         },
         dismissButton = {},
@@ -139,8 +141,8 @@ fun QuickRepliesEditor(
     if (confirmReset) {
         AlertDialog(
             onDismissRequest = { confirmReset = false },
-            title = { Text("Reset quick replies?") },
-            text = { Text("This restores the four chips the app came with and discards your own.") },
+            title = { Text(L10n.s("Reset quick replies?")) },
+            text = { Text(L10n.s("This restores the four chips the app came with and discards your own.")) },
             confirmButton = {
                 TextButton(
                     onClick = {
@@ -150,9 +152,9 @@ fun QuickRepliesEditor(
                     colors = ButtonDefaults.textButtonColors(
                         contentColor = MaterialTheme.colorScheme.error,
                     ),
-                ) { Text("Reset") }
+                ) { Text(L10n.s("Reset")) }
             },
-            dismissButton = { TextButton(onClick = { confirmReset = false }) { Text("Cancel") } },
+            dismissButton = { TextButton(onClick = { confirmReset = false }) { Text(L10n.s("Cancel")) } },
         )
     }
 }
@@ -178,19 +180,19 @@ private fun QuickReplyForm(
                 OutlinedTextField(
                     value = title,
                     onValueChange = { title = it },
-                    label = { Text("Label") },
+                    label = { Text(L10n.s("Label")) },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
                 )
                 OutlinedTextField(
                     value = prompt,
                     onValueChange = { prompt = it },
-                    label = { Text("Prompt") },
+                    label = { Text(L10n.s("Prompt")) },
                     minLines = 2,
                     maxLines = 5,
                     modifier = Modifier.fillMaxWidth(),
                 )
-                Text("Icon", fontSize = 13.sp, color = secondaryTint)
+                Text(L10n.s("Icon"), fontSize = 13.sp, color = secondaryTint)
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -219,9 +221,9 @@ private fun QuickReplyForm(
             TextButton(
                 enabled = cleanTitle.isNotEmpty() && cleanPrompt.isNotEmpty(),
                 onClick = { onSave(initial.copy(title = cleanTitle, prompt = cleanPrompt, icon = icon)) },
-            ) { Text("Save") }
+            ) { Text(L10n.s("Save")) }
         },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(L10n.s("Cancel")) } },
     )
 }
 

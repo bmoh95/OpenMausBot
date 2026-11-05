@@ -1,5 +1,7 @@
 package com.openmausbot.companion.ui
 
+import com.openmausbot.companion.core.L10n
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -110,7 +112,7 @@ fun QueuedSendRow(
         }
         Icon(
             imageVector = Icons.Filled.Edit,
-            contentDescription = "Edit this queued message",
+            contentDescription = L10n.s("Edit this queued message"),
             tint = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier
                 .clip(RoundedCornerShape(50))
@@ -120,7 +122,7 @@ fun QueuedSendRow(
         )
         Icon(
             imageVector = Icons.Filled.Delete,
-            contentDescription = "Delete this queued message",
+            contentDescription = L10n.s("Delete this queued message"),
             tint = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier
                 .clip(RoundedCornerShape(50))
@@ -145,10 +147,10 @@ object ComposerPromise {
         sending: Boolean,
         listening: Boolean,
     ): String = when {
-        sending -> "Sending…"
-        listening -> "Listening…"
+        sending -> L10n.s("Sending…")
+        listening -> L10n.s("Listening…")
         !busy -> "Ask $name"
-        engineCanSteer -> "Sends into this turn"
-        else -> "Sends after this turn"
+        engineCanSteer -> L10n.s("Sends into this turn")
+        else -> L10n.s("Sends after this turn")
     }
 }

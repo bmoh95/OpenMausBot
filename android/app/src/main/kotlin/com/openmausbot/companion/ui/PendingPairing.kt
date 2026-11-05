@@ -1,5 +1,7 @@
 package com.openmausbot.companion.ui
 
+import com.openmausbot.companion.core.L10n
+
 import androidx.compose.runtime.saveable.Saver
 import com.openmausbot.companion.core.CompanionJson
 import com.openmausbot.companion.core.Connection
@@ -370,10 +372,8 @@ internal data class PairingConfirmation(
  * about: what pairing authenticates, and what it does not encrypt.
  */
 internal object PairingCopy {
-    const val CONFIRM_HTTPS: String =
-        "Only continue if this is the computer whose QR code you just scanned. " +
-            "Confirming establishes an authenticated HTTPS companion connection."
-
+    val CONFIRM_HTTPS: String get() = L10n.s("Only continue if this is the computer whose QR code you just scanned. " +
+            "Confirming establishes an authenticated HTTPS companion connection.")
     /**
      * Mirrors `ios/App/PairingView.swift`, which says of a scanned computer:
      * "Confirm this computer to establish an authenticated companion connection.
@@ -385,22 +385,18 @@ internal object PairingCopy {
      * claims and the user is the one who has to choose the network, so both are
      * said out loud.
      */
-    const val CONFIRM_SCAN: String =
-        "Only continue if this is the computer whose QR code you just scanned. " +
+    val CONFIRM_SCAN: String get() = L10n.s("Only continue if this is the computer whose QR code you just scanned. " +
             "Confirming establishes an authenticated companion connection. Use a " +
             "trusted Wi-Fi network or a tailnet; OpenMausBot does not encrypt " +
-            "local Wi-Fi traffic."
-
+            "local Wi-Fi traffic.")
     /** Both the desktop companion and headless server show pairing codes. */
-    const val ENTER_CODE: String = "Enter the pairing code shown on your computer or server:"
-
+    val ENTER_CODE: String get() = L10n.s("Enter the pairing code shown on your computer or server:")
     /**
      * No iOS counterpart: SwiftUI's `@State` dies with the process, so iOS never
      * restores a half-finished scan. Android's saved state does, and the answer
      * §6 demands is a new QR rather than a replay.
      */
-    const val RESCAN: String =
-        "This app restarted before the pairing finished. That one-time code is " +
+    val RESCAN: String get() = L10n.s("This app restarted before the pairing finished. That one-time code is " +
             "never reused, because it may already have been redeemed. Start pairing " +
-            "again on your computer and scan the new QR code."
-}
+            "again on your computer and scan the new QR code.")
+    }

@@ -1,5 +1,7 @@
 package com.openmausbot.companion.ui
 
+import com.openmausbot.companion.core.L10n
+
 import com.openmausbot.companion.core.AttachedMessageContent
 import com.openmausbot.companion.core.Bot
 import com.openmausbot.companion.core.Chat
@@ -201,42 +203,42 @@ object ChatActions {
         // while a send or an import is in flight.
         out += ChatAction(
             id = ChatActionId.PHOTOS,
-            title = "Photo Library",
-            subtitle = "Add a photo to this message",
+            title = L10n.s("Photo Library"),
+            subtitle = L10n.s("Add a photo to this message"),
             enabled = canAddAttachment,
         )
         out += ChatAction(
             id = ChatActionId.FILES,
-            title = "Choose File",
-            subtitle = "Add a document from Files",
+            title = L10n.s("Choose File"),
+            subtitle = L10n.s("Add a document from Files"),
             enabled = canAddAttachment,
         )
         if (bot != null) {
             out += ChatAction(
                 id = ChatActionId.NEW_TASK,
-                title = "New thread",
+                title = L10n.s("New thread"),
                 subtitle = "Start a fresh thread with ${bot.name}",
                 enabled = TaskRules.canCreate(bot),
             )
             out += ChatAction(
                 id = ChatActionId.TASKS,
-                title = "Threads",
-                subtitle = "Switch, rename or remove one",
+                title = L10n.s("Threads"),
+                subtitle = L10n.s("Switch, rename or remove one"),
             )
             out += ChatAction(
                 id = ChatActionId.SETTINGS,
-                title = "Bot settings",
-                subtitle = "Model, profile, voice and notifications",
+                title = L10n.s("Bot settings"),
+                subtitle = L10n.s("Model, profile, voice and notifications"),
             )
             out += ChatAction(
                 id = ChatActionId.WATCH_COMPUTER,
-                title = "Watch computer",
+                title = L10n.s("Watch computer"),
                 subtitle = "Live view of what ${bot.name} is doing",
             )
         } else if (chat.supportsTasks) {
             out += ChatAction(
                 id = ChatActionId.NEW_TASK,
-                title = "New thread",
+                title = L10n.s("New thread"),
                 subtitle = "Start a fresh conversation in ${chat.name}",
                 // iOS: `disabled: current.busy || hasPendingApproval`, on the room
                 // branch only — a channel waiting on an answer does not get a
@@ -245,25 +247,25 @@ object ChatActions {
             )
             out += ChatAction(
                 id = ChatActionId.TASKS,
-                title = "Threads",
-                subtitle = "Switch, rename or remove one",
+                title = L10n.s("Threads"),
+                subtitle = L10n.s("Switch, rename or remove one"),
             )
         }
         out += ChatAction(
             id = ChatActionId.SHARE_MARKDOWN,
-            title = "Share transcript",
-            subtitle = "This thread as Markdown",
+            title = L10n.s("Share transcript"),
+            subtitle = L10n.s("This thread as Markdown"),
         )
         out += ChatAction(
             id = ChatActionId.SHARE_JSON,
-            title = "Share as JSON",
-            subtitle = "Structured transcript data",
+            title = L10n.s("Share as JSON"),
+            subtitle = L10n.s("Structured transcript data"),
         )
         if (chat.busy && bot != null) {
             out += ChatAction(
                 id = ChatActionId.INTERRUPT,
-                title = "Interrupt",
-                subtitle = "Stop the current turn",
+                title = L10n.s("Interrupt"),
+                subtitle = L10n.s("Stop the current turn"),
                 destructive = true,
             )
         }
@@ -550,13 +552,13 @@ object SlashCommands {
         SlashCommand(
             id = SlashCommandId.COMPUTER,
             title = "/computer",
-            description = "Open live screen & desktop controls",
+            description = L10n.s("Open live screen & desktop controls"),
             effect = SlashEffect.OpenComputer,
         ),
         SlashCommand(
             id = SlashCommandId.TASKS,
             title = "/threads",
-            description = "View and manage threads",
+            description = L10n.s("View and manage threads"),
             effect = SlashEffect.OpenTasks,
         ),
         SlashCommand(
@@ -568,13 +570,13 @@ object SlashCommands {
         SlashCommand(
             id = SlashCommandId.RETRY,
             title = "/retry",
-            description = "Retry the last turn with fresh context",
+            description = L10n.s("Retry the last turn with fresh context"),
             effect = SlashEffect.Send("Please retry the last turn"),
         ),
         SlashCommand(
             id = SlashCommandId.STEER,
             title = "/steer",
-            description = "Steer and redirect active execution",
+            description = L10n.s("Steer and redirect active execution"),
             effect = SlashEffect.Send("Pause and explain your current plan"),
         ),
     )

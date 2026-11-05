@@ -1,5 +1,7 @@
 package com.openmausbot.companion.ui
 
+import com.openmausbot.companion.core.L10n
+
 import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.net.Uri
@@ -133,7 +135,7 @@ fun ConnectedAppsScreen(onBack: () -> Unit) {
             verticalAlignment = Alignment.CenterVertically,
         ) {
             HeaderBackButton(onBack)
-            Text("Connected Apps", fontSize = 17.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
+            Text(L10n.s("Connected Apps"), fontSize = 17.sp, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
             TextButton(
                 onClick = { scope.launch { refresh(showProgress = true) } },
                 enabled = !refreshing,
@@ -158,7 +160,7 @@ fun ConnectedAppsScreen(onBack: () -> Unit) {
                 OutlinedTextField(
                     value = query,
                     onValueChange = { query = it },
-                    label = { Text("Search apps") },
+                    label = { Text(L10n.s("Search apps")) },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
                 )
@@ -173,7 +175,7 @@ fun ConnectedAppsScreen(onBack: () -> Unit) {
                             modifier = Modifier.padding(16.dp),
                             verticalArrangement = Arrangement.spacedBy(6.dp),
                         ) {
-                            Text("Connected apps need setup", fontWeight = FontWeight.SemiBold)
+                            Text(L10n.s("Connected apps need setup"), fontWeight = FontWeight.SemiBold)
                             Text(
                                 "Configure Composio on your computer first. Provider credentials are never returned to this phone.",
                                 color = secondaryTint,
@@ -198,7 +200,7 @@ fun ConnectedAppsScreen(onBack: () -> Unit) {
                 }
 
                 if (!loading && catalog?.cards.isNullOrEmpty()) {
-                    Text("No connected apps are available from this computer.", color = secondaryTint)
+                    Text(L10n.s("No connected apps are available from this computer."), color = secondaryTint)
                 }
 
                 if (loading) {
@@ -214,13 +216,13 @@ fun ConnectedAppsScreen(onBack: () -> Unit) {
         val normalized = ConnectedAppsRules.additionalAccountAlias(alias)
         AlertDialog(
             onDismissRequest = { aliasTarget = null },
-            title = { Text("Account alias") },
+            title = { Text(L10n.s("Account alias")) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     OutlinedTextField(
                         value = alias,
                         onValueChange = { alias = it },
-                        label = { Text("Work, Personal, Client…") },
+                        label = { Text(L10n.s("Work, Personal, Client…")) },
                         singleLine = true,
                         modifier = Modifier.fillMaxWidth(),
                     )
@@ -238,9 +240,9 @@ fun ConnectedAppsScreen(onBack: () -> Unit) {
                         aliasTarget = null
                         authorize(target.slug, normalized)
                     },
-                ) { Text("Continue") }
+                ) { Text(L10n.s("Continue")) }
             },
-            dismissButton = { TextButton(onClick = { aliasTarget = null }) { Text("Cancel") } },
+            dismissButton = { TextButton(onClick = { aliasTarget = null }) { Text(L10n.s("Cancel")) } },
         )
     }
 }
@@ -262,7 +264,7 @@ private val AliasTargetSaver = listSaver<AliasTarget?, String>(
 private fun CredentialStoreWarning(hasLastKnownInventory: Boolean) {
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            Text("Accounts could not be re-checked", fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.tertiary)
+            Text(L10n.s("Accounts could not be re-checked"), fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.tertiary)
             Text(
                 if (hasLastKnownInventory) {
                     "Showing what was connected last time. Your computer could not open its credential store just now, so these accounts could not be re-checked. Nothing has been disconnected — restarting OpenMausBot on your computer usually clears this."
@@ -296,16 +298,16 @@ private fun ConnectorCardView(
                     Text(card.label, fontWeight = FontWeight.SemiBold)
                     Text(card.blurb, color = secondaryTint, fontSize = 13.sp)
                 }
-                if (pending) Text("Connecting…", color = secondaryTint, fontSize = 13.sp)
+                if (pending) Text(L10n.s("Connecting…"), color = secondaryTint, fontSize = 13.sp)
             }
 
             when {
-                !hasAuthoritativeInventory -> Text("Connection unknown", color = secondaryTint)
+                !hasAuthoritativeInventory -> Text(L10n.s("Connection unknown"), color = secondaryTint)
                 accounts.isEmpty() && !connected && !pending -> Button(onClick = onConnect, enabled = configured) {
                     Text("Connect ${card.label}")
                 }
                 accounts.isEmpty() -> {
-                    Text(if (pending) "Connecting…" else "Connected")
+                    Text(if (pending) L10n.s("Connecting…") else "Connected")
                     Text(
                         "Account details are unavailable from this provider. Refresh after authorization finishes.",
                         color = secondaryTint,
@@ -320,7 +322,7 @@ private fun ConnectorCardView(
                     TextButton(
                         onClick = onAddAccount,
                         enabled = ConnectedAppsRules.canAddAnotherAccount(accounts),
-                    ) { Text("Add another account") }
+                    ) { Text(L10n.s("Add another account")) }
                 }
             }
         }

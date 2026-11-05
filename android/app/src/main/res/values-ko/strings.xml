@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">MausBot</string>
+    <string name="notification_channel_blocking">승인과 질문</string>
+    <string name="notification_channel_blocking_desc">답이 필요한 급한 알림</string>
+    <string name="notification_channel_done">봇 메시지</string>
+    <string name="notification_channel_done_desc">봇이 답하거나 한 차례를 마치면 소리와 함께 표시돼요</string>
+    <string name="notification_channel_routine">루틴 실패</string>
+    <string name="notification_channel_routine_desc">예약된 루틴이 실패했을 때</string>
+    <string name="notification_channel_always_on">백그라운드 연결</string>
+    <string name="notification_channel_always_on_desc">OpenMausBot이 백그라운드에서 연결된 동안 표시돼요</string>
+    <string name="always_on_notification_title">MausBot이 연결을 유지하고 있어요</string>
+    <string name="always_on_notification_text">앱을 닫아도 알림이 와요</string>
+</resources>

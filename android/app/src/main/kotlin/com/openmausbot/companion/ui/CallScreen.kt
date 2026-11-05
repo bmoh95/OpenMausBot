@@ -1,5 +1,7 @@
 package com.openmausbot.companion.ui
 
+import com.openmausbot.companion.core.L10n
+
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
@@ -282,7 +284,7 @@ internal fun CallScreen(bot: Bot, onDismiss: () -> Unit) {
                             )
                         }
                     }
-                    TouchTarget(onClick = ::hangUp, size = 68.dp, contentDescription = "End call") {
+                    TouchTarget(onClick = ::hangUp, size = 68.dp, contentDescription = L10n.s("End call")) {
                         Box(
                             modifier = Modifier
                                 .size(68.dp)

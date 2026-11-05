@@ -1,5 +1,7 @@
 package com.openmausbot.companion.ui
 
+import com.openmausbot.companion.core.L10n
+
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -269,7 +271,7 @@ fun PairingScreen(onCancel: () -> Unit) {
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
-                text = "Pair with a computer",
+                text = L10n.s("Pair with a computer"),
                 style = MaterialTheme.typography.headlineSmall,
                 fontWeight = FontWeight.SemiBold,
                 modifier = Modifier.weight(1f),
@@ -278,7 +280,7 @@ fun PairingScreen(onCancel: () -> Unit) {
             // the same place. Refused while a redemption is in flight, because a
             // credential that may already have reached the computer must not be
             // abandoned halfway (§6) — the port of `.disabled(!allowsNavigation)`.
-            TextButton(onClick = onCancel, enabled = !pairing) { Text("Not now") }
+            TextButton(onClick = onCancel, enabled = !pairing) { Text(L10n.s("Not now")) }
         }
 
         val selected = pending
@@ -326,8 +328,8 @@ fun PairingScreen(onCancel: () -> Unit) {
                         failure = null
                         val connection = service.toConnection()
                         if (connection == null) {
-                            failure = "That computer did not answer with an address. " +
-                                "Enter the address shown in Phone settings instead."
+                            failure = L10n.s("That computer did not answer with an address. ") +
+                                L10n.s("Enter the address shown in Phone settings instead.")
                         } else {
                             openPending(connection, fromScan = false)
                         }
@@ -337,9 +339,10 @@ fun PairingScreen(onCancel: () -> Unit) {
                 // describes is the thing on screen.
                 if (permissionSnapshot.discoveryNeedsRequest) {
                     Text(
-                        text = "Searching this network needs " +
-                            "${permissionSnapshot.missingDiscovery.joinToString()}, which is " +
-                            "still off. The QR code and the address below work without it.",
+                        text = L10n.s(
+                            "Searching this network needs %s, which is still off. The QR code and the address below work without it.",
+                            permissionSnapshot.missingDiscovery.joinToString(),
+                        ),
                         fontSize = 13.sp,
                         color = secondaryTint,
                     )
@@ -386,7 +389,7 @@ private fun OtherWaysSection(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
-                    text = "Other ways to connect",
+                    text = L10n.s("Other ways to connect"),
                     modifier = Modifier.weight(1f),
                     textAlign = TextAlign.Start,
                     fontWeight = FontWeight.SemiBold,
@@ -425,15 +428,15 @@ internal fun pairingFailureDisposition(
 
 @Composable
 private fun SetupSection(onScan: () -> Unit) {
-    SectionCard(title = "On your computer") {
-        Text("1.  Open OpenMausBot → Settings → Phone", fontSize = 15.sp)
-        Text("2.  Choose Set up a phone", fontSize = 15.sp)
+    SectionCard(title = L10n.s("On your computer")) {
+        Text(L10n.s("1.  Open OpenMausBot → Settings → Phone"), fontSize = 15.sp)
+        Text(L10n.s("2.  Choose Set up a phone"), fontSize = 15.sp)
         Button(onClick = onScan, modifier = Modifier.fillMaxWidth()) {
-            Text("Scan QR Code")
+            Text(L10n.s("Scan QR Code"))
         }
         Text(
-            text = "Scan the QR code, check the computer name, and confirm. The address and " +
-                "one-time credential are filled securely for you.",
+            text = L10n.s("Scan the QR code, check the computer name, and confirm. The address and ") +
+                L10n.s("one-time credential are filled securely for you."),
             fontSize = 13.sp,
             color = secondaryTint,
         )
@@ -447,7 +450,7 @@ private fun DiscoverySection(
     onChoose: (DiscoveredService) -> Unit,
 ) {
     val active = discovery as? DiscoveryState.Active
-    SectionCard(title = "On this network") {
+    SectionCard(title = L10n.s("On this network")) {
         val problem = active?.failure
         when {
             problem != null -> Text(problem, fontSize = 13.sp, color = secondaryTint)
@@ -458,7 +461,7 @@ private fun DiscoverySection(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
-                    Text("Looking…", color = secondaryTint, fontSize = 15.sp)
+                    Text(L10n.s("Looking…"), color = secondaryTint, fontSize = 15.sp)
                 }
                 if (searchedLongEnough) {
                     // NSD is multicast: it does not cross subnets, and guest
@@ -466,17 +469,17 @@ private fun DiscoverySection(
                     // Different Wi-Fi on the two devices is by far the most
                     // common reason this list stays empty.
                     Text(
-                        text = "Nothing found yet. Check that this phone and your computer are on " +
-                            "the same Wi-Fi network — a guest network often blocks them from seeing " +
-                            "each other. You can always enter the address below instead.",
+                        text = L10n.s("Nothing found yet. Check that this phone and your computer are on ") +
+                            L10n.s("the same Wi-Fi network — a guest network often blocks them from seeing ") +
+                            L10n.s("each other. You can always enter the address below instead."),
                         fontSize = 13.sp,
                         color = secondaryTint,
                     )
                     // The honest answer when a network refuses to cooperate.
                     Text(
-                        text = "If it never appears, install Tailscale on both and sign in to the " +
-                            "same account — Phone settings will then show a name ending in " +
-                            ".ts.net to enter below.",
+                        text = L10n.s("If it never appears, install Tailscale on both and sign in to the ") +
+                            L10n.s("same account — Phone settings will then show a name ending in ") +
+                            L10n.s(".ts.net to enter below."),
                         fontSize = 13.sp,
                         color = secondaryTint,
                     )
@@ -503,11 +506,11 @@ private fun ManualSection(
     onAddressChange: (String) -> Unit,
     onContinue: () -> Unit,
 ) {
-    SectionCard(title = "Or enter the address") {
+    SectionCard(title = L10n.s("Or enter the address")) {
         OutlinedTextField(
             value = address,
             onValueChange = onAddressChange,
-            placeholder = { Text("https://mac.example or 192.168.1.42:8810") },
+            placeholder = { Text(L10n.s("https://mac.example or 192.168.1.42:8810")) },
             singleLine = true,
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri),
             modifier = Modifier.fillMaxWidth(),
@@ -517,11 +520,11 @@ private fun ManualSection(
             enabled = address.isNotBlank(),
             modifier = Modifier.fillMaxWidth(),
         ) {
-            Text("Continue")
+            Text(L10n.s("Continue"))
         }
         Text(
-            text = "Whatever Phone settings on your computer shows — a secure https:// " +
-                "address, an address on this network, or a Tailscale name like " +
+            text = L10n.s("Whatever Phone settings on your computer shows — a secure https:// ") +
+                L10n.s("address, an address on this network, or a Tailscale name like ") +
                 "macbook.tail1234.ts.net:8810.",
             fontSize = 13.sp,
             color = secondaryTint,
@@ -538,14 +541,14 @@ private fun CodeSection(
     onSubmit: (String) -> Unit,
     onCancel: () -> Unit,
 ) {
-    SectionCard(title = "Confirm computer") {
+    SectionCard(title = L10n.s("Confirm computer")) {
         // Name and address sit above the branch, as they do in `PairingView.swift`:
         // the user is confirming which computer at which address, and that is the
         // same question whether the credential came from a QR code or the six
         // digits are about to be typed.
         Text(confirmation.name, fontSize = 17.sp, fontWeight = FontWeight.SemiBold)
         Row(modifier = Modifier.fillMaxWidth()) {
-            Text("Address", color = secondaryTint, fontSize = 15.sp)
+            Text(L10n.s("Address"), color = secondaryTint, fontSize = 15.sp)
             Spacer(Modifier.weight(1f))
             Text(confirmation.address, fontSize = 15.sp, fontFamily = FontFamily.Monospace)
         }
@@ -560,7 +563,7 @@ private fun CodeSection(
                 if (pairing) {
                     CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
                 } else {
-                    Text("Pair with this computer")
+                    Text(L10n.s("Pair with this computer"))
                 }
             }
 
@@ -568,7 +571,7 @@ private fun CodeSection(
                 OutlinedTextField(
                     value = code,
                     onValueChange = onCodeChange,
-                    placeholder = { Text("6-digit or ABCD-EFGH-JKLM code") },
+                    placeholder = { Text(L10n.s("6-digit or ABCD-EFGH-JKLM code")) },
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Ascii),
                     textStyle = MaterialTheme.typography.headlineSmall.copy(
@@ -588,7 +591,7 @@ private fun CodeSection(
                             strokeWidth = 2.dp,
                         )
                     } else {
-                        Text("Connect")
+                        Text(L10n.s("Connect"))
                     }
                 }
             }
@@ -601,7 +604,7 @@ private fun CodeSection(
         }
 
         OutlinedButton(onClick = onCancel, enabled = !pairing, modifier = Modifier.fillMaxWidth()) {
-            Text("Choose a different computer")
+            Text(L10n.s("Choose a different computer"))
         }
     }
 }

@@ -1,5 +1,7 @@
 package com.openmausbot.companion.ui
 
+import com.openmausbot.companion.core.L10n
+
 import android.graphics.BitmapFactory
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -115,7 +117,7 @@ fun ComputerScreen(botId: String, onBack: () -> Unit) {
         ) {
             Icon(
                 imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                contentDescription = "Back",
+                contentDescription = L10n.s("Back"),
                 tint = Color.White,
                 modifier = Modifier
                     .size(32.dp)
@@ -209,10 +211,10 @@ fun ComputerScreen(botId: String, onBack: () -> Unit) {
                             }
                         }
                     },
-                ) { Text("Open desktop") }
+                ) { Text(L10n.s("Open desktop")) }
             },
             dismissButton = {
-                TextButton(onClick = { confirming = false }) { Text("Cancel") }
+                TextButton(onClick = { confirming = false }) { Text(L10n.s("Cancel")) }
             },
         )
     }

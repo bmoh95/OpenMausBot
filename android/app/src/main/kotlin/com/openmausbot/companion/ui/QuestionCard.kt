@@ -1,5 +1,7 @@
 package com.openmausbot.companion.ui
 
+import com.openmausbot.companion.core.L10n
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -166,7 +168,7 @@ internal fun QuestionCardView(chat: Chat, message: Message, haptics: Haptics) {
         }
 
         if (QuestionCardRules.agentComposed(message)) {
-            Text("Agent-composed question", fontSize = 12.sp, color = secondaryTint)
+            Text(L10n.s("Agent-composed question"), fontSize = 12.sp, color = secondaryTint)
         }
 
         if (questions.size > 1) {
@@ -238,7 +240,7 @@ internal fun QuestionCardView(chat: Chat, message: Message, haptics: Haptics) {
         }
 
         if (current.allowsMultiple) {
-            Text("Choose all that apply", fontSize = 12.sp, color = secondaryTint)
+            Text(L10n.s("Choose all that apply"), fontSize = 12.sp, color = secondaryTint)
         }
 
         Column(
@@ -275,7 +277,7 @@ internal fun QuestionCardView(chat: Chat, message: Message, haptics: Haptics) {
                 OutlinedTextField(
                     value = custom[index].orEmpty(),
                     onValueChange = { custom[index] = it },
-                    placeholder = { Text("Type your own answer") },
+                    placeholder = { Text(L10n.s("Type your own answer")) },
                     singleLine = false,
                     maxLines = 4,
                     enabled = !answering,

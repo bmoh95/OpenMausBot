@@ -1,5 +1,7 @@
 package com.openmausbot.companion.ui
 
+import com.openmausbot.companion.core.L10n
+
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -207,10 +209,10 @@ internal fun AgentProfileSheet(bot: Bot, onDismiss: () -> Unit, onOpenOverview: 
                         onClick = onDismiss,
                         modifier = Modifier.align(Alignment.CenterStart),
                     ) {
-                        Text("Done")
+                        Text(L10n.s("Done"))
                     }
                     Text(
-                        text = "Bot settings",
+                        text = L10n.s("Bot settings"),
                         fontSize = 17.sp,
                         fontWeight = FontWeight.SemiBold,
                         modifier = Modifier.align(Alignment.Center),
@@ -219,7 +221,7 @@ internal fun AgentProfileSheet(bot: Bot, onDismiss: () -> Unit, onOpenOverview: 
 
                 FormSection(header = null) {
                     ActionRow(
-                        text = "What this bot does",
+                        text = L10n.s("What this bot does"),
                         icon = Icons.Filled.Info,
                         onClick = { onOpenOverview(bot.id) },
                     )
@@ -296,7 +298,7 @@ internal fun AgentProfileSheet(bot: Bot, onDismiss: () -> Unit, onOpenOverview: 
                             IconNote(text = note, icon = Icons.Filled.Info)
                         }
                         ActionRow(
-                            text = "Apply model",
+                            text = L10n.s("Apply model"),
                             icon = Icons.Filled.Check,
                             enabled = !busy && currentTask != null && ModelRules.canApply(
                                 loaded = modelsLoaded,
@@ -355,7 +357,7 @@ internal fun AgentProfileSheet(bot: Bot, onDismiss: () -> Unit, onOpenOverview: 
                     }
 
                     ActionRow(
-                        text = "Upload image",
+                        text = L10n.s("Upload image"),
                         icon = Icons.Filled.AddCircle,
                         enabled = !busy,
                         onClick = { pickImage.launch(AvatarImagePicker.request()) },
@@ -363,7 +365,7 @@ internal fun AgentProfileSheet(bot: Bot, onDismiss: () -> Unit, onOpenOverview: 
 
                     if (current.avatarUrl != null) {
                         ActionRow(
-                            text = "Use mascot",
+                            text = L10n.s("Use mascot"),
                             icon = Icons.Filled.Delete,
                             enabled = !busy,
                             destructive = true,
@@ -399,13 +401,13 @@ internal fun AgentProfileSheet(bot: Bot, onDismiss: () -> Unit, onOpenOverview: 
                     OutlinedTextField(
                         value = prompt,
                         onValueChange = { prompt = it },
-                        label = { Text("Art direction") },
+                        label = { Text(L10n.s("Art direction")) },
                         minLines = 2,
                         maxLines = 5,
                         modifier = Modifier.fillMaxWidth(),
                     )
                     ActionRow(
-                        text = "Generate on computer",
+                        text = L10n.s("Generate on computer"),
                         painter = R.drawable.ic_sparkles,
                         enabled = ProfileRules.canGenerate(busy, config, prompt),
                         onClick = {
@@ -448,7 +450,7 @@ internal fun AgentProfileSheet(bot: Bot, onDismiss: () -> Unit, onOpenOverview: 
                     OutlinedTextField(
                         value = form.name,
                         onValueChange = { form = form.copy(name = it) },
-                        label = { Text("Name") },
+                        label = { Text(L10n.s("Name")) },
                         singleLine = true,
                         keyboardOptions = KeyboardOptions(
                             capitalization = KeyboardCapitalization.Words,
@@ -458,14 +460,14 @@ internal fun AgentProfileSheet(bot: Bot, onDismiss: () -> Unit, onOpenOverview: 
                     OutlinedTextField(
                         value = form.title,
                         onValueChange = { form = form.copy(title = it) },
-                        label = { Text("Title") },
+                        label = { Text(L10n.s("Title")) },
                         singleLine = true,
                         modifier = Modifier.fillMaxWidth(),
                     )
                     OutlinedTextField(
                         value = form.description,
                         onValueChange = { form = form.copy(description = it) },
-                        label = { Text("What this agent does") },
+                        label = { Text(L10n.s("What this agent does")) },
                         minLines = 3,
                         maxLines = 8,
                         modifier = Modifier.fillMaxWidth(),
@@ -522,7 +524,7 @@ internal fun AgentProfileSheet(bot: Bot, onDismiss: () -> Unit, onOpenOverview: 
                         onCheckedChange = { form = form.copy(speakReplies = it) },
                     )
                     ActionRow(
-                        text = "Preview voice",
+                        text = L10n.s("Preview voice"),
                         painter = R.drawable.ic_volume_up,
                         enabled = ProfileRules.canPreview(busy, config, form.voice),
                         onClick = {
@@ -561,7 +563,7 @@ internal fun AgentProfileSheet(bot: Bot, onDismiss: () -> Unit, onOpenOverview: 
 
                 FormSection(header = null) {
                     ActionRow(
-                        text = "Save profile changes",
+                        text = L10n.s("Save profile changes"),
                         enabled = ProfileRules.canSave(form, busy),
                         onClick = {
                             scope.launch {

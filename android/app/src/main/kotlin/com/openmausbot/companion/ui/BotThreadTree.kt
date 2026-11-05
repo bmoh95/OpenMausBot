@@ -1,5 +1,7 @@
 package com.openmausbot.companion.ui
 
+import com.openmausbot.companion.core.L10n
+
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -91,7 +93,7 @@ internal fun BotThreadTree(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 DisclosureIcon(isExpanded)
-                Text("Threads", fontSize = 13.sp, fontWeight = FontWeight.Medium, color = secondaryTint)
+                Text(L10n.s("Threads"), fontSize = 13.sp, fontWeight = FontWeight.Medium, color = secondaryTint)
                 Text(count.toString(), fontSize = 13.sp, color = secondaryTint)
             }
             if (isExpanded) {

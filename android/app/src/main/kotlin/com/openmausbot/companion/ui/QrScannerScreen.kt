@@ -1,5 +1,7 @@
 package com.openmausbot.companion.ui
 
+import com.openmausbot.companion.core.L10n
+
 import android.util.Log
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ExperimentalGetImage
@@ -72,10 +74,10 @@ fun QrScannerScreen(onCancel: () -> Unit, validate: (String) -> String?) {
     Column(modifier = Modifier.fillMaxSize()) {
         Box(modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 6.dp)) {
             TextButton(onClick = onCancel, modifier = Modifier.align(Alignment.CenterStart)) {
-                Text("Cancel")
+                Text(L10n.s("Cancel"))
             }
             Text(
-                text = "Scan QR Code",
+                text = L10n.s("Scan QR Code"),
                 fontWeight = FontWeight.SemiBold,
                 modifier = Modifier.align(Alignment.Center),
             )
@@ -83,21 +85,21 @@ fun QrScannerScreen(onCancel: () -> Unit, validate: (String) -> String?) {
 
         when {
             cameraFailure != null -> EmptyState(
-                title = "Scanner unavailable",
+                title = L10n.s("Scanner unavailable"),
                 description = cameraFailure!!,
             )
 
             access == CameraAccess.UNKNOWN -> EmptyState(
-                title = "Requesting camera access…",
-                description = "Allow camera access to scan the pairing QR code shown by OpenMausBot.",
+                title = L10n.s("Requesting camera access…"),
+                description = L10n.s("Allow camera access to scan the pairing QR code shown by OpenMausBot."),
             )
 
             access == CameraAccess.DENIED -> EmptyState(
-                title = "Camera access needed",
-                description = "Allow camera access to scan the pairing QR code shown by " +
-                    "OpenMausBot, or go back and enter the address and code by hand.",
+                title = L10n.s("Camera access needed"),
+                description = L10n.s("Allow camera access to scan the pairing QR code shown by ") +
+                    L10n.s("OpenMausBot, or go back and enter the address and code by hand."),
             ) {
-                Button(onClick = environment.openAppSettings) { Text("Open Settings") }
+                Button(onClick = environment.openAppSettings) { Text(L10n.s("Open Settings")) }
             }
 
             else -> ScannerSurface(

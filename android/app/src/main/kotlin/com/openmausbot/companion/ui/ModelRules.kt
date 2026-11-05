@@ -1,5 +1,7 @@
 package com.openmausbot.companion.ui
 
+import com.openmausbot.companion.core.L10n
+
 import com.openmausbot.companion.core.Instance
 import com.openmausbot.companion.core.ModelSelection
 
@@ -122,7 +124,7 @@ object ModelRules {
     }
 
     fun effortLabel(effort: String): String = when (effort.lowercase()) {
-        "xhigh" -> "X-High"
+        "xhigh" -> L10n.s("X-High")
         else -> effort.replaceFirstChar { it.uppercase() }
     }
 }

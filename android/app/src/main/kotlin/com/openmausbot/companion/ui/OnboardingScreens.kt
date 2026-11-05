@@ -1,5 +1,7 @@
 package com.openmausbot.companion.ui
 
+import com.openmausbot.companion.core.L10n
+
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -50,32 +52,26 @@ import androidx.compose.ui.unit.sp
 
 /** The sentences these screens are made of, named so a test can look them up. */
 object OnboardingCopy {
-    const val WELCOME_TITLE = "Take your bots with you"
-    const val WELCOME_SUBTITLE =
-        "Open chats, approve actions, and send new work from your phone."
-    const val WELCOME_CONNECT = "Connect my computer"
-    const val NOT_NOW = "Not now"
-
-    const val UNPAIRED_HOME_TITLE = "Connect when you're ready"
-    const val UNPAIRED_HOME_BODY =
-        "Pair this phone with OpenMausBot to see your chats and respond to your bots."
-    const val UNPAIRED_HOME_HINT =
-        "On your computer, open OpenMausBot → Settings → Phone."
-    const val UNPAIRED_HOME_CONNECT = "Connect computer"
-
-    const val NOTIFICATIONS_TITLE = "Stay in the loop"
-
+    val WELCOME_TITLE: String get() = L10n.s("Take your bots with you")
+    val WELCOME_SUBTITLE: String get() = L10n.s("Open chats, approve actions, and send new work from your phone.")
+    val WELCOME_CONNECT: String get() = L10n.s("Connect my computer")
+    val NOT_NOW: String get() = L10n.s("Not now")
+    val UNPAIRED_HOME_TITLE: String get() = L10n.s("Connect when you're ready")
+    val UNPAIRED_HOME_BODY: String get() = L10n.s("Pair this phone with OpenMausBot to see your chats and respond to your bots.")
+    val UNPAIRED_HOME_HINT: String get() = L10n.s("On your computer, open OpenMausBot → Settings → Phone.")
+    val UNPAIRED_HOME_CONNECT: String get() = L10n.s("Connect computer")
+    val NOTIFICATIONS_TITLE: String get() = L10n.s("Stay in the loop")
     /**
      * The limit is stated here rather than softened, and it is the same sentence
      * Settings shows, from [SettingsPolicy.NOTIFICATIONS_FOOTER]: someone
      * deciding whether to grant this should be told what it can and cannot do
      * before the system sheet appears, not after.
      */
-    const val NOTIFICATIONS_BODY = SettingsPolicy.NOTIFICATIONS_FOOTER
-    const val NOTIFICATIONS_APPROVALS = "Approvals that are waiting for you"
-    const val NOTIFICATIONS_FINISHED = "Finished work and important updates"
-    const val NOTIFICATIONS_ENABLE = "Enable notifications"
-}
+    val NOTIFICATIONS_BODY: String get() = SettingsPolicy.NOTIFICATIONS_FOOTER
+    val NOTIFICATIONS_APPROVALS: String get() = L10n.s("Approvals that are waiting for you")
+    val NOTIFICATIONS_FINISHED: String get() = L10n.s("Finished work and important updates")
+    val NOTIFICATIONS_ENABLE: String get() = L10n.s("Enable notifications")
+    }
 
 /**
  * First launch. Says what the app is, then offers exactly two answers — and the
@@ -112,18 +108,18 @@ fun WelcomeScreen(onConnect: () -> Unit, onSkip: () -> Unit) {
         Spacer(Modifier.height(6.dp))
         Benefit(
             icon = Icons.AutoMirrored.Filled.Send,
-            title = "Your chats, in your pocket",
-            detail = "Pick up the same conversations from your computer.",
+            title = L10n.s("Your chats, in your pocket"),
+            detail = L10n.s("Pick up the same conversations from your computer."),
         )
         Benefit(
             icon = Icons.Filled.CheckCircle,
-            title = "Respond when a bot needs you",
-            detail = "Review approvals without going back to your desk.",
+            title = L10n.s("Respond when a bot needs you"),
+            detail = L10n.s("Review approvals without going back to your desk."),
         )
         Benefit(
             icon = Icons.Filled.Lock,
-            title = "Private by design",
-            detail = "You choose which trusted computer this phone connects to.",
+            title = L10n.s("Private by design"),
+            detail = L10n.s("You choose which trusted computer this phone connects to."),
         )
     }
 }
@@ -151,7 +147,7 @@ fun UnpairedHomeScreen(onConnect: () -> Unit, onOpenSettings: () -> Unit) {
             )
             ChromeButton(
                 icon = Icons.Filled.Settings,
-                contentDescription = "Settings",
+                contentDescription = L10n.s("Settings"),
                 onClick = onOpenSettings,
             )
         }

@@ -1,5 +1,7 @@
 package com.openmausbot.companion.ui
 
+import com.openmausbot.companion.core.L10n
+
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -100,7 +102,7 @@ internal fun NewSectionSheet(onDismiss: () -> Unit) {
                     Text(if (lastCreated == null) "Cancel" else "Done")
                 }
                 Text(
-                    text = "Organize bots",
+                    text = L10n.s("Organize bots"),
                     fontSize = 17.sp,
                     fontWeight = FontWeight.SemiBold,
                     modifier = Modifier.align(Alignment.Center),
@@ -123,7 +125,7 @@ internal fun NewSectionSheet(onDismiss: () -> Unit) {
                     },
                     modifier = Modifier.align(Alignment.CenterEnd),
                 ) {
-                    Text("Save")
+                    Text(L10n.s("Save"))
                 }
             }
 
@@ -131,7 +133,7 @@ internal fun NewSectionSheet(onDismiss: () -> Unit) {
                 SectionNote(
                     text = "$section is ready",
                     // Android files by checkbox, so there is nothing to swipe together.
-                    detail = "Choose more bots for another section, or tap Done.",
+                    detail = L10n.s("Choose more bots for another section, or tap Done."),
                     container = MaterialTheme.colorScheme.secondaryContainer,
                     content = MaterialTheme.colorScheme.onSecondaryContainer,
                 )
@@ -140,7 +142,7 @@ internal fun NewSectionSheet(onDismiss: () -> Unit) {
             OutlinedTextField(
                 value = name,
                 onValueChange = { name = it },
-                label = { Text("Section name") },
+                label = { Text(L10n.s("Section name")) },
                 isError = trimmed.length > SectionRules.MAX_NAME_LENGTH,
                 supportingText = {
                     Row(modifier = Modifier.fillMaxWidth()) {
@@ -182,7 +184,7 @@ internal fun NewSectionSheet(onDismiss: () -> Unit) {
             }
 
             Text(
-                text = "Bots",
+                text = L10n.s("Bots"),
                 fontSize = 13.sp,
                 fontWeight = FontWeight.SemiBold,
                 color = secondaryTint,

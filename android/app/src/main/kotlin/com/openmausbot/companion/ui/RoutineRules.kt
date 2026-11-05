@@ -1,5 +1,7 @@
 package com.openmausbot.companion.ui
 
+import com.openmausbot.companion.core.L10n
+
 import com.openmausbot.companion.core.Routine
 import com.openmausbot.companion.core.RoutineInput
 import com.openmausbot.companion.core.RoutineRun
@@ -111,8 +113,8 @@ object RoutineRules {
         runs.sortedByDescending { it.scheduledFor }.take(RECEIPT_LIMIT)
 
     fun locationLabel(location: RoutineRunLocation): String = when (location) {
-        RoutineRunLocation.MAUS -> "This computer"
-        RoutineRunLocation.CLOUD -> "Cloud VM"
+        RoutineRunLocation.MAUS -> L10n.s("This computer")
+        RoutineRunLocation.CLOUD -> L10n.s("Cloud VM")
     }
 
     /**
@@ -143,8 +145,8 @@ object RoutineRules {
         }
         val values = schedule.weekdays.orEmpty()
         val dayText = when {
-            values.size == 7 -> "Every day"
-            values == listOf(1, 2, 3, 4, 5) -> "Weekdays"
+            values.size == 7 -> L10n.s("Every day")
+            values == listOf(1, 2, 3, 4, 5) -> L10n.s("Weekdays")
             else -> values.mapNotNull { DAY_NAMES.getOrNull(it)?.take(3) }.joinToString(", ")
         }
         return "$dayText at ${schedule.time ?: "—"}"

@@ -1,5 +1,7 @@
 package com.openmausbot.companion.discovery
 
+import com.openmausbot.companion.core.L10n
+
 import android.content.Context
 import android.net.nsd.NsdManager
 import android.net.nsd.NsdServiceInfo
@@ -279,15 +281,15 @@ internal fun browseDiscoveryFlow(
         } catch (error: SecurityException) {
             started = false
             terminal(
-                "Local Network access is off. Enable nearby devices permission, " +
-                    "or enter a Tailscale address below.",
+                L10n.s("Local Network access is off. Enable nearby devices permission, ") +
+                    L10n.s("or enter a Tailscale address below."),
             )
         } catch (error: Exception) {
             started = false
             terminal(
                 error.message
-                    ?: "Local discovery isn't available right now. " +
-                    "Enter the address shown in Phone settings below.",
+                    ?: L10n.s("Local discovery isn't available right now. ") +
+                    L10n.s("Enter the address shown in Phone settings below."),
             )
         }
     }
@@ -436,7 +438,7 @@ class NsdDiscovery(
                     DiscoveryState.Active(
                         browsing = false,
                         found = emptyList(),
-                        failure = "Local discovery isn't available right now. Enter the address shown in Phone settings below.",
+                        failure = L10n.s("Local discovery isn't available right now. Enter the address shown in Phone settings below."),
                     ),
                 )
             }
@@ -519,13 +521,13 @@ class NsdDiscovery(
 
     private fun failureMessage(errorCode: Int): String = when (errorCode) {
         NsdManager.FAILURE_INTERNAL_ERROR ->
-            "Local discovery isn't available right now. Enter the address shown in Phone settings below."
+            L10n.s("Local discovery isn't available right now. Enter the address shown in Phone settings below.")
         NsdManager.FAILURE_MAX_LIMIT ->
             // Only reached once the retries are spent — nothing is retrying now.
-            "Local discovery keeps getting interrupted on this phone. " +
-                "Enter the address shown in Phone settings below."
+            L10n.s("Local discovery keeps getting interrupted on this phone. ") +
+                L10n.s("Enter the address shown in Phone settings below.")
         else ->
-            "Local Network access is off. Enable nearby devices permission, or enter a Tailscale address below."
+            L10n.s("Local Network access is off. Enable nearby devices permission, or enter a Tailscale address below.")
     }
 
     companion object {

@@ -1,5 +1,7 @@
 package com.openmausbot.companion.ui
 
+import com.openmausbot.companion.core.L10n
+
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -115,9 +117,9 @@ fun VoiceSettingsScreen(onBack: () -> Unit) {
             verticalAlignment = Alignment.CenterVertically,
         ) {
             IconButton(onClick = onBack) {
-                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = L10n.s("Back"))
             }
-            Text("Voice", fontSize = 17.sp, fontWeight = FontWeight.SemiBold)
+            Text(L10n.s("Voice"), fontSize = 17.sp, fontWeight = FontWeight.SemiBold)
         }
         Column(
             modifier = Modifier
@@ -131,7 +133,7 @@ fun VoiceSettingsScreen(onBack: () -> Unit) {
                 Text(VoiceSettingsRules.HEADER.uppercase(), fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = secondaryTint)
                 HorizontalDivider()
                 Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                    Text("Status", fontSize = 15.sp, color = secondaryTint, modifier = Modifier.weight(1f))
+                    Text(L10n.s("Status"), fontSize = 15.sp, color = secondaryTint, modifier = Modifier.weight(1f))
                     val text = VoiceSettingsRules.statusText(status)
                     if (text == null) {
                         CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
@@ -145,7 +147,7 @@ fun VoiceSettingsScreen(onBack: () -> Unit) {
                 }
                 if (VoiceSettingsRules.usesSystemVoices(status)) {
                     Text(VoiceSettingsRules.SYSTEM_NOTE, fontSize = 13.sp, color = secondaryTint)
-                    ActionRow(text = "Use ElevenLabs", enabled = !saving) {
+                    ActionRow(text = L10n.s("Use ElevenLabs"), enabled = !saving) {
                         run({ session.updateVoiceProvider("elevenlabs") }, success = null)
                     }
                 }
@@ -159,7 +161,7 @@ fun VoiceSettingsScreen(onBack: () -> Unit) {
                     OutlinedTextField(
                         value = key,
                         onValueChange = { key = it },
-                        label = { Text("ElevenLabs API key") },
+                        label = { Text(L10n.s("ElevenLabs API key")) },
                         singleLine = true,
                         visualTransformation = PasswordVisualTransformation(),
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, autoCorrectEnabled = false),
@@ -185,7 +187,7 @@ fun VoiceSettingsScreen(onBack: () -> Unit) {
                         if (saving) CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
                     }
                     if (VoiceSettingsRules.canRemove(status, saving = false)) {
-                        ActionRow(text = "Remove key", enabled = !saving, destructive = true) {
+                        ActionRow(text = L10n.s("Remove key"), enabled = !saving, destructive = true) {
                             run({ session.updateVoiceKey("") }, success = VoiceSettingsRules.REMOVED)
                         }
                     }

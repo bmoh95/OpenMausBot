@@ -1,5 +1,7 @@
 package com.openmausbot.companion.ui
 
+import com.openmausbot.companion.core.L10n
+
 import com.openmausbot.companion.core.Bot
 import com.openmausbot.companion.core.BotTask
 import com.openmausbot.companion.core.Chat
@@ -29,7 +31,7 @@ object TaskRules {
 
     fun subtitle(chat: Chat): String = when (chat) {
         is Chat.BotChat -> subtitle(chat.bot)
-        is Chat.RoomChat -> "Group threads"
+        is Chat.RoomChat -> L10n.s("Group threads")
     }
 
     /**

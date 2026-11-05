@@ -1,5 +1,7 @@
 package com.openmausbot.companion.ui
 
+import com.openmausbot.companion.core.L10n
+
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.text.selection.SelectionContainer
@@ -111,14 +113,14 @@ internal fun TasksRoutinesScreen(onBack: () -> Unit, onOpenChat: (Chat) -> Unit)
         ) {
             HeaderBackButton(onBack)
             Text(
-                text = "Threads & Routines",
+                text = L10n.s("Threads & Routines"),
                 fontSize = 17.sp,
                 fontWeight = FontWeight.SemiBold,
                 modifier = Modifier.weight(1f),
             )
             ChromeButton(
                 icon = Icons.Filled.Add,
-                contentDescription = "New routine",
+                contentDescription = L10n.s("New routine"),
                 onClick = { editor = RoutineEditorTarget.new() },
                 size = 36.dp,
                 glyph = 18.dp,
@@ -258,11 +260,11 @@ internal fun TasksRoutinesScreen(onBack: () -> Unit, onOpenChat: (Chat) -> Unit)
                         }
                     },
                 ) {
-                    Text("Delete routine", color = MaterialTheme.colorScheme.error)
+                    Text(L10n.s("Delete routine"), color = MaterialTheme.colorScheme.error)
                 }
             },
             dismissButton = {
-                TextButton(onClick = { deleting = null }) { Text("Cancel") }
+                TextButton(onClick = { deleting = null }) { Text(L10n.s("Cancel")) }
             },
         )
     }
@@ -409,7 +411,7 @@ private fun RoutineRow(
             )
             DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
                 DropdownMenuItem(
-                    text = { Text("Run now") },
+                    text = { Text(L10n.s("Run now")) },
                     onClick = {
                         menuOpen = false
                         onRunNow()
@@ -425,14 +427,14 @@ private fun RoutineRow(
                     )
                 }
                 DropdownMenuItem(
-                    text = { Text("Edit") },
+                    text = { Text(L10n.s("Edit")) },
                     onClick = {
                         menuOpen = false
                         onEdit()
                     },
                 )
                 DropdownMenuItem(
-                    text = { Text("Delete", color = MaterialTheme.colorScheme.error) },
+                    text = { Text(L10n.s("Delete"), color = MaterialTheme.colorScheme.error) },
                     onClick = {
                         menuOpen = false
                         onDelete()
@@ -520,7 +522,7 @@ private fun RoutineRunRow(
                 }
                 NotificationTarget.from(run.botId, run.threadId)?.let { target ->
                     ActionRow(
-                        text = "Open thread",
+                        text = L10n.s("Open thread"),
                         icon = Icons.AutoMirrored.Filled.ExitToApp,
                         onClick = { onOpenTask(target) },
                     )

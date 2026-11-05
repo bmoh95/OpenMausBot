@@ -1,5 +1,7 @@
 package com.openmausbot.companion.ui
 
+import com.openmausbot.companion.core.L10n
+
 import com.openmausbot.companion.core.APIError
 import com.openmausbot.companion.core.Bot
 import com.openmausbot.companion.core.CompanionClient
@@ -160,9 +162,9 @@ object SharePolicy {
         // Until a client actually works this session, iOS shows "Automatic".
         val kind = connection.activeEndpoint?.kind ?: return "Automatic"
         return when (kind) {
-            CompanionEndpointKind.HOSTED -> "Secure HTTPS"
+            CompanionEndpointKind.HOSTED -> L10n.s("Secure HTTPS")
             CompanionEndpointKind.TAILNET -> "Tailscale"
-            CompanionEndpointKind.LAN, CompanionEndpointKind.BONJOUR -> "Local network"
+            CompanionEndpointKind.LAN, CompanionEndpointKind.BONJOUR -> L10n.s("Local network")
         }
     }
 

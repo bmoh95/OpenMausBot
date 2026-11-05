@@ -1,5 +1,7 @@
 package com.openmausbot.companion.ui
 
+import com.openmausbot.companion.core.L10n
+
 import android.content.ClipData
 import android.util.Base64
 import androidx.compose.foundation.Canvas
@@ -213,7 +215,7 @@ fun MessageRow(
                     val busy = bot.busy == true
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.KeyboardArrowLeft,
-                        contentDescription = "Previous version",
+                        contentDescription = L10n.s("Previous version"),
                         tint = if (versionIndex == 0 || busy) {
                             secondaryTint.copy(alpha = 0.4f)
                         } else {
@@ -235,7 +237,7 @@ fun MessageRow(
                     )
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                        contentDescription = "Next version",
+                        contentDescription = L10n.s("Next version"),
                         tint = if (versionIndex + 1 >= versions.size || busy) {
                             secondaryTint.copy(alpha = 0.4f)
                         } else {
@@ -272,7 +274,7 @@ fun MessageRow(
             MessageActions.copyableText(message)?.let { text ->
                 HorizontalDivider()
                 DropdownMenuItem(
-                    text = { Text("Copy") },
+                    text = { Text(L10n.s("Copy")) },
                     onClick = {
                         menuOpen = false
                         scope.launch {
@@ -283,7 +285,7 @@ fun MessageRow(
                     },
                 )
                 DropdownMenuItem(
-                    text = { Text("Select text") },
+                    text = { Text(L10n.s("Select text")) },
                     onClick = {
                         menuOpen = false
                         selectingText = text
@@ -296,7 +298,7 @@ fun MessageRow(
             if (editableText != null && bot != null && !isPendingEdit) {
                 HorizontalDivider()
                 DropdownMenuItem(
-                    text = { Text("Edit and retry") },
+                    text = { Text(L10n.s("Edit and retry")) },
                     enabled = bot.busy != true && editPending == null,
                     onClick = {
                         menuOpen = false
@@ -311,14 +313,14 @@ fun MessageRow(
     if (editing && bot != null) {
         AlertDialog(
             onDismissRequest = { editing = false },
-            title = { Text("Edit and retry") },
+            title = { Text(L10n.s("Edit and retry")) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text("This creates a new version and continues from there.", fontSize = 14.sp)
+                    Text(L10n.s("This creates a new version and continues from there."), fontSize = 14.sp)
                     OutlinedTextField(
                         value = editText,
                         onValueChange = { editText = it },
-                        label = { Text("Message") },
+                        label = { Text(L10n.s("Message")) },
                         modifier = Modifier.fillMaxWidth(),
                     )
                 }
@@ -336,10 +338,10 @@ fun MessageRow(
                         if (text.isEmpty()) return@TextButton
                         scope.launch { session.edit(message, bot, text) }
                     },
-                ) { Text("Send") }
+                ) { Text(L10n.s("Send")) }
             },
             dismissButton = {
-                TextButton(onClick = { editing = false }) { Text("Cancel") }
+                TextButton(onClick = { editing = false }) { Text(L10n.s("Cancel")) }
             },
         )
     }
@@ -361,7 +363,7 @@ private fun SelectableTextDialog(text: String, onDismiss: () -> Unit) {
     var copied by remember(text) { mutableStateOf(false) }
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Select text") },
+        title = { Text(L10n.s("Select text")) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 SelectionContainer {
@@ -395,7 +397,7 @@ private fun SelectableTextDialog(text: String, onDismiss: () -> Unit) {
                 },
             ) { Text(if (copied) "Copied" else "Copy all") }
         },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Done") } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(L10n.s("Done")) } },
     )
 }
 
@@ -588,7 +590,7 @@ private fun SharedAttachmentView(
         horizontalArrangement = Arrangement.spacedBy(10.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text("FILE", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = BubbleColor.mineText.copy(alpha = 0.68f))
+        Text(L10n.s("FILE"), fontSize = 11.sp, fontWeight = FontWeight.Bold, color = BubbleColor.mineText.copy(alpha = 0.68f))
         Column(modifier = Modifier.weight(1f)) {
             Text(
                 attachment.name,
@@ -598,7 +600,7 @@ private fun SharedAttachmentView(
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
-            Text("Tap to preview", fontSize = 12.sp, color = BubbleColor.mineText.copy(alpha = 0.68f))
+            Text(L10n.s("Tap to preview"), fontSize = 12.sp, color = BubbleColor.mineText.copy(alpha = 0.68f))
         }
     }
 }
@@ -699,7 +701,7 @@ private fun AttachmentLoadFailure(label: String, foreground: Color = BubbleColor
             modifier = Modifier.size(20.dp),
         )
         Text(label, fontSize = 13.sp, color = foreground.copy(alpha = 0.80f))
-        TextButton(onClick = onRetry) { Text("Retry") }
+        TextButton(onClick = onRetry) { Text(L10n.s("Retry")) }
     }
 }
 
@@ -858,7 +860,7 @@ private fun VoiceNoteAttachmentView(
             enabled = active != null && durationMs != null,
             modifier = Modifier
                 .weight(1f)
-                .semantics { contentDescription = "Seek voice note" },
+                .semantics { contentDescription = L10n.s("Seek voice note") },
         )
         Text(
             voiceNoteClock(positionMs) + " / " + (durationMs?.let(::voiceNoteClock) ?: "--:--"),
@@ -1227,7 +1229,7 @@ private fun CardView(chat: Chat, message: Message, haptics: Haptics) {
                     },
                     enabled = !answering,
                 ) {
-                    Text("Always allow this tool", fontSize = 14.sp)
+                    Text(L10n.s("Always allow this tool"), fontSize = 14.sp)
                 }
             }
         } else {
@@ -1306,12 +1308,12 @@ private fun ScreenShot(threadId: String, message: Message) {
                         tint = MaterialTheme.colorScheme.error,
                         modifier = Modifier.size(20.dp),
                     )
-                    Text("Screenshot unavailable", fontSize = 13.sp, color = secondaryTint)
-                    TextButton(onClick = { attempt += 1 }) { Text("Retry") }
+                    Text(L10n.s("Screenshot unavailable"), fontSize = 13.sp, color = secondaryTint)
+                    TextButton(onClick = { attempt += 1 }) { Text(L10n.s("Retry")) }
                 }
                 is ScreenShotState.Ready -> Image(
                     bitmap = current.image,
-                    contentDescription = "A frame of this bot's computer",
+                    contentDescription = L10n.s("A frame of this bot's computer"),
                     contentScale = ContentScale.Fit,
                     modifier = Modifier.fillMaxSize(),
                 )

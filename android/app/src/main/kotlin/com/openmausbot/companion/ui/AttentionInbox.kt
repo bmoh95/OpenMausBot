@@ -1,5 +1,7 @@
 package com.openmausbot.companion.ui
 
+import com.openmausbot.companion.core.L10n
+
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -33,10 +35,10 @@ internal data class AttentionEntry(
 
     /** The one status word the row carries, in the order the person cares. */
     fun statusLine(): String = when {
-        task.activity == "waiting-on-you" -> "Waiting on you"
-        task.busy == true || task.activity == "working" -> "Working"
-        queued -> "Queued"
-        else -> "Unread"
+        task.activity == "waiting-on-you" -> L10n.s("Waiting on you")
+        task.busy == true || task.activity == "working" -> L10n.s("Working")
+        queued -> L10n.s("Queued")
+        else -> L10n.s("Unread")
     }
 }
 

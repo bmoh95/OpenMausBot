@@ -1,5 +1,7 @@
 package com.openmausbot.companion.ui
 
+import com.openmausbot.companion.core.L10n
+
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -77,10 +79,10 @@ internal fun NewGroupSheet(onCreated: (Room) -> Unit, onDismiss: () -> Unit) {
                     onClick = onDismiss,
                     modifier = Modifier.align(Alignment.CenterStart),
                 ) {
-                    Text("Cancel")
+                    Text(L10n.s("Cancel"))
                 }
                 Text(
-                    text = "New group",
+                    text = L10n.s("New group"),
                     fontSize = 17.sp,
                     fontWeight = FontWeight.SemiBold,
                     modifier = Modifier.align(Alignment.Center),
@@ -103,14 +105,14 @@ internal fun NewGroupSheet(onCreated: (Room) -> Unit, onDismiss: () -> Unit) {
                     enabled = NewGroupRules.canCreate(members, creating),
                     modifier = Modifier.align(Alignment.CenterEnd),
                 ) {
-                    Text("Create")
+                    Text(L10n.s("Create"))
                 }
             }
 
             OutlinedTextField(
                 value = name,
                 onValueChange = { name = it },
-                label = { Text("Group name (optional)") },
+                label = { Text(L10n.s("Group name (optional)")) },
                 singleLine = true,
                 // A room's name is a label, not prose; iOS turns autocorrect off
                 // here for the same reason.
@@ -122,7 +124,7 @@ internal fun NewGroupSheet(onCreated: (Room) -> Unit, onDismiss: () -> Unit) {
             )
 
             Text(
-                text = "Bots",
+                text = L10n.s("Bots"),
                 fontSize = 13.sp,
                 fontWeight = FontWeight.SemiBold,
                 color = secondaryTint,

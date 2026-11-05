@@ -1,5 +1,7 @@
 package com.openmausbot.companion.ui
 
+import com.openmausbot.companion.core.L10n
+
 import com.openmausbot.companion.core.AvatarCrop
 import com.openmausbot.companion.core.Bot
 import com.openmausbot.companion.core.BotProfilePatch
@@ -352,9 +354,9 @@ object ProfileRules {
     }
 
     fun cropLabel(crop: AvatarCrop): String = when (crop) {
-        AvatarCrop.MASCOT -> "Mascot"
-        AvatarCrop.CIRCLE -> "Circle"
-        AvatarCrop.ROUNDED -> "Rounded"
-        AvatarCrop.SQUARE -> "Square"
+        AvatarCrop.MASCOT -> L10n.s("Mascot")
+        AvatarCrop.CIRCLE -> L10n.s("Circle")
+        AvatarCrop.ROUNDED -> L10n.s("Rounded")
+        AvatarCrop.SQUARE -> L10n.s("Square")
     }
 }

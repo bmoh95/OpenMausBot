@@ -1,5 +1,7 @@
 package com.openmausbot.companion.ui
 
+import com.openmausbot.companion.core.L10n
+
 import android.content.ClipData
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -105,7 +107,7 @@ fun SettingsScreen(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             HeaderBackButton(onBack)
-            Text("Settings", fontSize = 17.sp, fontWeight = FontWeight.SemiBold)
+            Text(L10n.s("Settings"), fontSize = 17.sp, fontWeight = FontWeight.SemiBold)
         }
         HorizontalDivider()
 
@@ -175,7 +177,7 @@ fun SettingsScreen(
                 SettingsSection("Troubleshooting") {
                     Footnote(troubleshootingText(status))
                     SettingsButton(
-                        text = "Try reconnecting",
+                        text = L10n.s("Try reconnecting"),
                         enabled = !reconnecting,
                         trailing = {
                             if (reconnecting) {
@@ -243,20 +245,20 @@ fun SettingsScreen(
                 SettingsSection("Workspace") {
                     onOpenRoutines?.let { openRoutines ->
                         SettingsButton(
-                            text = "Threads & Routines",
+                            text = L10n.s("Threads & Routines"),
                             icon = R.drawable.ic_schedule,
                             onClick = openRoutines,
                         )
                     }
                     onOpenConnectedApps?.let { openConnectedApps ->
                         SettingsButton(
-                            text = "Connected Apps",
+                            text = L10n.s("Connected Apps"),
                             onClick = openConnectedApps,
                         )
                     }
                     onOpenVoice?.let { openVoice ->
                         SettingsButton(
-                            text = "Voice",
+                            text = L10n.s("Voice"),
                             icon = R.drawable.ic_phone,
                             onClick = openVoice,
                         )
@@ -284,7 +286,7 @@ fun SettingsScreen(
     if (editingAddress) {
         AlertDialog(
             onDismissRequest = { editingAddress = false },
-            title = { Text("Edit address") },
+            title = { Text(L10n.s("Edit address")) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(SettingsPolicy.EDIT_ADDRESS_MESSAGE, fontSize = 14.sp)
@@ -294,7 +296,7 @@ fun SettingsScreen(
                             addressText = it
                             addressError = null
                         },
-                        placeholder = { Text("https://mac.example or 192.168.1.42:8810") },
+                        placeholder = { Text(L10n.s("https://mac.example or 192.168.1.42:8810")) },
                         singleLine = true,
                         isError = addressError != null,
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri),
@@ -317,10 +319,10 @@ fun SettingsScreen(
                             addressError = AddressEdit.INVALID
                         }
                     },
-                ) { Text("Save") }
+                ) { Text(L10n.s("Save")) }
             },
             dismissButton = {
-                TextButton(onClick = { editingAddress = false }) { Text("Cancel") }
+                TextButton(onClick = { editingAddress = false }) { Text(L10n.s("Cancel")) }
             },
         )
     }
@@ -356,7 +358,7 @@ fun SettingsScreen(
                 }
             },
             dismissButton = {
-                TextButton(onClick = { confirmingUnpair = false }) { Text("Cancel") }
+                TextButton(onClick = { confirmingUnpair = false }) { Text(L10n.s("Cancel")) }
             },
         )
     }
@@ -365,17 +367,17 @@ fun SettingsScreen(
         AlertDialog(
             onDismissRequest = { pendingComputerRemoval = null },
             title = { Text("Remove ${computer.name}?") },
-            text = { Text("This removes the saved connection from this phone only.") },
+            text = { Text(L10n.s("This removes the saved connection from this phone only.")) },
             confirmButton = {
                 TextButton(
                     onClick = {
                         pendingComputerRemoval = null
                         session.forgetConnection(computer.id)
                     },
-                ) { Text("Remove", color = MaterialTheme.colorScheme.error) }
+                ) { Text(L10n.s("Remove"), color = MaterialTheme.colorScheme.error) }
             },
             dismissButton = {
-                TextButton(onClick = { pendingComputerRemoval = null }) { Text("Cancel") }
+                TextButton(onClick = { pendingComputerRemoval = null }) { Text(L10n.s("Cancel")) }
             },
         )
     }
@@ -383,7 +385,7 @@ fun SettingsScreen(
     if (choosingActivity) {
         AlertDialog(
             onDismissRequest = { choosingActivity = false },
-            title = { Text("Activity detail") },
+            title = { Text(L10n.s("Activity detail")) },
             text = {
                 // iOS draws a Picker (SettingsView.swift:67-78), which marks the
                 // choice already in force; three plain buttons do not.
@@ -415,7 +417,7 @@ fun SettingsScreen(
                 }
             },
             confirmButton = {},
-            dismissButton = { TextButton(onClick = { choosingActivity = false }) { Text("Cancel") } },
+            dismissButton = { TextButton(onClick = { choosingActivity = false }) { Text(L10n.s("Cancel")) } },
         )
     }
 
@@ -471,7 +473,7 @@ private fun AddressRow(
     onCopy: () -> Unit,
 ) {
     Column(modifier = Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-        Text("Address", fontSize = 15.sp, color = secondaryTint)
+        Text(L10n.s("Address"), fontSize = 15.sp, color = secondaryTint)
         if (expanded) {
             // Selectable, because the reason to show it in full is to take it away.
             SelectionContainer {
@@ -562,10 +564,10 @@ private const val COPIED_LABEL_MILLIS = 2_000L
  * of `ConnectionSecurityView.troubleshootingText` (`ios/App/SettingsView.swift:445-458`).
  */
 internal fun troubleshootingText(status: Session.Status): String = when (status) {
-    Session.Status.Live -> "This computer is connected and responding normally."
-    Session.Status.Connecting -> "OpenMausBot is trying the saved connection automatically."
-    Session.Status.Unauthorized -> "This phone was removed from the computer. Pair it again to reconnect."
-    Session.Status.Unpaired -> "This phone is not paired with a computer."
+    Session.Status.Live -> L10n.s("This computer is connected and responding normally.")
+    Session.Status.Connecting -> L10n.s("OpenMausBot is trying the saved connection automatically.")
+    Session.Status.Unauthorized -> L10n.s("This phone was removed from the computer. Pair it again to reconnect.")
+    Session.Status.Unpaired -> L10n.s("This phone is not paired with a computer.")
     is Session.Status.Offline -> status.message
 }
 

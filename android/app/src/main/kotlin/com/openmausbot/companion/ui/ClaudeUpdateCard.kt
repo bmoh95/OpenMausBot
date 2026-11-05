@@ -1,5 +1,7 @@
 package com.openmausbot.companion.ui
 
+import com.openmausbot.companion.core.L10n
+
 import android.content.ClipData
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -106,9 +108,9 @@ fun ClaudeUpdateCard(messageId: String, instanceId: String) {
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalArrangement = Arrangement.spacedBy(4.dp),
                 ) {
-                    Button(onClick = ::update) { Text("Update Claude for me") }
+                    Button(onClick = ::update) { Text(L10n.s("Update Claude for me")) }
                     TextButton(onClick = { phase = ClaudeUpdatePhase.Manual }) {
-                        Text("I'll do it myself")
+                        Text(L10n.s("I'll do it myself"))
                     }
                 }
             }
@@ -172,7 +174,7 @@ fun ClaudeUpdateCard(messageId: String, instanceId: String) {
                     ) { Text(if (copied) "Copied" else "Copy", fontWeight = FontWeight.Medium) }
                 }
                 if (current is ClaudeUpdatePhase.Failed) {
-                    Button(onClick = ::update) { Text("Try updating again") }
+                    Button(onClick = ::update) { Text(L10n.s("Try updating again")) }
                 }
             }
         }

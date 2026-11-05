@@ -1,5 +1,7 @@
 package com.openmausbot.companion.ui
 
+import com.openmausbot.companion.core.L10n
+
 import android.view.KeyCharacterMap
 import androidx.activity.compose.BackHandler
 import androidx.compose.material.icons.filled.Warning
@@ -833,7 +835,7 @@ private fun LoadedChat(
                                 },
                                 modifier = Modifier.fillMaxWidth(),
                             ) {
-                                Text("Load earlier messages", fontSize = 13.sp)
+                                Text(L10n.s("Load earlier messages"), fontSize = 13.sp)
                             }
                         }
                     }
@@ -1217,7 +1219,7 @@ private fun BackPill(unreadElsewhere: Int, onBack: () -> Unit) {
     ) {
         Icon(
             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-            contentDescription = "Back",
+            contentDescription = L10n.s("Back"),
             modifier = Modifier.size(20.dp),
         )
         if (unreadElsewhere > 0) {
@@ -1319,7 +1321,7 @@ private fun BoxScope.PlusSheet(
                     role = Role.Button,
                     onClick = onDismiss,
                 )
-                .semantics { contentDescription = "Close" },
+                .semantics { contentDescription = L10n.s("Close") },
         )
     }
 
@@ -1498,7 +1500,7 @@ private fun Composer(
         // What is in flight, in the order iOS stacks them: the send or the
         // import, then a file on its way, then whatever went wrong.
         if (inFlight) {
-            ComposerStatusLine(if (preparing) "Preparing attachments…" else "Sending…")
+            ComposerStatusLine(if (preparing) "Preparing attachments…" else L10n.s("Sending…"))
         }
         if (openingFileName != null) {
             ComposerStatusLine("Opening $openingFileName…")
@@ -1521,7 +1523,7 @@ private fun Composer(
                 )
                 Text(text = attachmentError, fontSize = 13.sp, modifier = Modifier.weight(1f))
                 Text(
-                    text = "Dismiss",
+                    text = L10n.s("Dismiss"),
                     fontSize = 13.sp,
                     fontWeight = FontWeight.SemiBold,
                     color = MaterialTheme.colorScheme.primary,
@@ -1631,7 +1633,7 @@ private fun Composer(
                 // it better than a borrowed symbol would.
                 TouchTarget(
                     onClick = onToggleHud,
-                    contentDescription = "Slash commands",
+                    contentDescription = L10n.s("Slash commands"),
                     modifier = Modifier.semantics {
                         stateDescription = if (accessory == ComposerAccessory.HUD) {
                             "Expanded"
@@ -1746,7 +1748,7 @@ private fun Composer(
                     ) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.Send,
-                            contentDescription = "Send",
+                            contentDescription = L10n.s("Send"),
                             tint = if (canSend) BubbleColor.mineText else secondaryTint,
                             modifier = Modifier.size(16.dp),
                         )

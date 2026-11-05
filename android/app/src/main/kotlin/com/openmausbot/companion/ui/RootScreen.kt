@@ -1,5 +1,7 @@
 package com.openmausbot.companion.ui
 
+import com.openmausbot.companion.core.L10n
+
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -408,10 +410,10 @@ private fun ActionErrorDialog(session: Session) {
     val text = message ?: return
     AlertDialog(
         onDismissRequest = { session.actionError = null },
-        title = { Text("Something went wrong") },
+        title = { Text(L10n.s("Something went wrong")) },
         text = { Text(text) },
         confirmButton = {
-            TextButton(onClick = { session.actionError = null }) { Text("OK") }
+            TextButton(onClick = { session.actionError = null }) { Text(L10n.s("OK")) }
         },
     )
 }
@@ -424,12 +426,12 @@ private fun ActionErrorDialog(session: Session) {
 @Composable
 private fun UnpairedScreen(onPairAgain: () -> Unit, onChooseAnother: (() -> Unit)? = null) {
     EmptyState(
-        title = "This phone was unpaired",
-        description = "It was removed from the computer's Phone settings, or the pairing was reset.",
+        title = L10n.s("This phone was unpaired"),
+        description = L10n.s("It was removed from the computer's Phone settings, or the pairing was reset."),
     ) {
-        Button(onClick = onPairAgain) { Text("Pair again") }
+        Button(onClick = onPairAgain) { Text(L10n.s("Pair again")) }
         onChooseAnother?.let { choose ->
-            TextButton(onClick = choose) { Text("Use another computer") }
+            TextButton(onClick = choose) { Text(L10n.s("Use another computer")) }
         }
     }
 }

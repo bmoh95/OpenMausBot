@@ -1,5 +1,7 @@
 package com.openmausbot.companion.ui
 
+import com.openmausbot.companion.core.L10n
+
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -34,10 +36,10 @@ import com.openmausbot.companion.core.listStamp
 /** The quiet status under a title: waiting states are never painted as work.
  * The queued flag is client state the harness reports out-of-band. */
 internal fun BotTask.runtimeLabel(queued: Boolean = false): String? = when {
-    activity == "waiting-on-you" -> "Waiting on you"
-    isWaitingOnTeammate -> "Waiting on teammate"
-    isWorking -> "Working"
-    activity == "queued" || queued -> "Queued"
+    activity == "waiting-on-you" -> L10n.s("Waiting on you")
+    isWaitingOnTeammate -> L10n.s("Waiting on teammate")
+    isWorking -> L10n.s("Working")
+    activity == "queued" || queued -> L10n.s("Queued")
     else -> null
 }
 
@@ -57,9 +59,9 @@ internal fun BotThreadRow(
     val snoozed = task.isSnoozed(now)
     val dimmed = (task.isClosed || task.isArchived || snoozed) && runtime == null && task.unread != true
     val foldedState = when {
-        task.isClosed -> "Closed"
-        task.isArchived -> "Archived"
-        snoozed -> "Snoozed"
+        task.isClosed -> L10n.s("Closed")
+        task.isArchived -> L10n.s("Archived")
+        snoozed -> L10n.s("Snoozed")
         else -> null
     }
     Row(

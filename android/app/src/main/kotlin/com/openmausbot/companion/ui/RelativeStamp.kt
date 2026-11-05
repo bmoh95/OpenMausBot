@@ -28,7 +28,7 @@ object RelativeStamp {
         val now = zoned(nowMillis.toDouble(), zone)
         return when {
             at.toLocalDate() == now.toLocalDate() -> time(atMillis, zone, locale)
-            at.toLocalDate() == now.toLocalDate().minusDays(1) -> "Yesterday"
+            at.toLocalDate() == now.toLocalDate().minusDays(1) -> if (locale.language == "ko") "어제" else "Yesterday"
             at.isAfter(now.minusDays(6)) -> weekdayFormatter(locale).format(at)
             else -> dateFormatter(locale).format(at)
         }
@@ -45,8 +45,8 @@ object RelativeStamp {
         val now = zoned(nowMillis.toDouble(), zone)
         val clock = time(atMillis, zone, locale)
         return when {
-            at.toLocalDate() == now.toLocalDate() -> "Today $clock"
-            at.toLocalDate() == now.toLocalDate().minusDays(1) -> "Yesterday $clock"
+            at.toLocalDate() == now.toLocalDate() -> if (locale.language == "ko") "오늘 $clock" else "Today $clock"
+            at.toLocalDate() == now.toLocalDate().minusDays(1) -> if (locale.language == "ko") "어제 $clock" else "Yesterday $clock"
             else -> "${dateFormatter(locale).format(at)} $clock"
         }
     }

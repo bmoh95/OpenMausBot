@@ -1,5 +1,7 @@
 package com.openmausbot.companion.ui
 
+import com.openmausbot.companion.core.L10n
+
 import com.openmausbot.companion.core.Bot
 
 /**
@@ -11,16 +13,13 @@ import com.openmausbot.companion.core.Bot
  * what it is doing, not to do it yourself on a screen the size of a playing card.
  */
 object ComputerPolicy {
-    const val IDLE_EXPLANATION = "This bot's computer is only captured while it is working."
-    const val CONFIRM_TITLE = "Open live cloud desktop?"
-    const val CONFIRM_MESSAGE =
-        "This gives this phone full control of the cloud computer, including anything " +
-            "signed in inside it."
-    const val VNC_NOTE =
-        "Interactive VNC session. Access must be enabled for this phone in the computer's " +
-            "Phone settings."
-    const val OPEN_DESKTOP = "Open live cloud desktop"
-
+    val IDLE_EXPLANATION: String get() = L10n.s("This bot's computer is only captured while it is working.")
+    val CONFIRM_TITLE: String get() = L10n.s("Open live cloud desktop?")
+    val CONFIRM_MESSAGE: String get() = L10n.s("This gives this phone full control of the cloud computer, including anything " +
+            "signed in inside it.")
+    val VNC_NOTE: String get() = L10n.s("Interactive VNC session. Access must be enabled for this phone in the computer's " +
+            "Phone settings.")
+    val OPEN_DESKTOP: String get() = L10n.s("Open live cloud desktop")
     /**
      * A VPS-backed bot is `"cloud"` too, but the server refuses to mint an
      * interactive desktop for it — no button beats a dead one. An older harness

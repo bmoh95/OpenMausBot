@@ -1,5 +1,7 @@
 package com.openmausbot.companion.ui
 
+import com.openmausbot.companion.core.L10n
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
@@ -149,7 +151,7 @@ private fun ChromeButton(
  */
 @Composable
 internal fun HeaderBackButton(onBack: () -> Unit, modifier: Modifier = Modifier) {
-    TouchTarget(onClick = onBack, modifier = modifier, contentDescription = "Back") {
+    TouchTarget(onClick = onBack, modifier = modifier, contentDescription = L10n.s("Back")) {
         Icon(
             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
             contentDescription = null,

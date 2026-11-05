@@ -1,5 +1,7 @@
 package com.openmausbot.companion.ui
 
+import com.openmausbot.companion.core.L10n
+
 import android.text.format.DateFormat
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -206,7 +208,7 @@ internal fun RoutineEditorSheet(
         ) {
             Box(modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp)) {
                 TextButton(onClick = onDismiss, modifier = Modifier.align(Alignment.CenterStart)) {
-                    Text("Cancel")
+                    Text(L10n.s("Cancel"))
                 }
                 Text(
                     text = if (opened.routineId == null) "New routine" else "Edit routine",
@@ -257,7 +259,7 @@ internal fun RoutineEditorSheet(
                     enabled = canSave,
                     modifier = Modifier.align(Alignment.CenterEnd),
                 ) {
-                    Text("Save")
+                    Text(L10n.s("Save"))
                 }
             }
 
@@ -265,7 +267,7 @@ internal fun RoutineEditorSheet(
                 OutlinedTextField(
                     value = name,
                     onValueChange = { name = it },
-                    label = { Text("Routine name") },
+                    label = { Text(L10n.s("Routine name")) },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
                 )
@@ -279,7 +281,7 @@ internal fun RoutineEditorSheet(
                 OutlinedTextField(
                     value = prompt,
                     onValueChange = { prompt = it },
-                    label = { Text("What should the agent do?") },
+                    label = { Text(L10n.s("What should the agent do?")) },
                     minLines = 4,
                     maxLines = 10,
                     modifier = Modifier.fillMaxWidth(),
@@ -442,7 +444,7 @@ internal fun RoutineEditorSheet(
                                         )
                                     }
                                     DropdownMenuItem(
-                                        text = { Text("Custom") },
+                                        text = { Text(L10n.s("Custom")) },
                                         onClick = {
                                             intervalMenuExpanded = false
                                             if (!intervalUsesCustom) intervalMinutesText = ""
@@ -459,7 +461,7 @@ internal fun RoutineEditorSheet(
                             TextButton(
                                 onClick = { pickingDate = true },
                                 modifier = Modifier.semantics {
-                                    contentDescription = "Change when the interval starts"
+                                    contentDescription = L10n.s("Change when the interval starts")
                                 },
                             ) {
                                 Text(
@@ -484,9 +486,9 @@ internal fun RoutineEditorSheet(
                                         intervalMinutesText = value
                                     }
                                 },
-                                label = { Text("Custom interval") },
-                                suffix = { Text("minutes") },
-                                supportingText = { Text("From 5 minutes to 24 hours") },
+                                label = { Text(L10n.s("Custom interval")) },
+                                suffix = { Text(L10n.s("minutes")) },
+                                supportingText = { Text(L10n.s("From 5 minutes to 24 hours")) },
                                 isError = intervalMinutes == null,
                                 singleLine = true,
                                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
@@ -580,7 +582,7 @@ internal fun RoutineEditorSheet(
                         // two dialogs, so the time follows the day.
                         pickingTime = true
                     },
-                ) { Text("Next") }
+                ) { Text(L10n.s("Next")) }
             },
             dismissButton = {
                 TextButton(
@@ -592,7 +594,7 @@ internal fun RoutineEditorSheet(
                             once = once.discard()
                         }
                     },
-                ) { Text("Cancel") }
+                ) { Text(L10n.s("Cancel")) }
             },
         ) {
             DatePicker(state = datePickerState)
@@ -668,17 +670,17 @@ internal fun RoutineEditorSheet(
                             dailyMinuteOfDay = timeState.hour * 60 + timeState.minute
                         }
                     },
-                ) { Text("OK") }
+                ) { Text(L10n.s("OK")) }
             },
             dismissButton = {
-                TextButton(onClick = cancel) { Text("Cancel") }
+                TextButton(onClick = cancel) { Text(L10n.s("Cancel")) }
             },
             title = {
                 Text(
                     when (kind) {
-                        RoutineSchedule.Kind.INTERVAL -> "Alignment time"
-                        RoutineSchedule.Kind.ONCE -> "Run"
-                        else -> "Time"
+                        RoutineSchedule.Kind.INTERVAL -> L10n.s("Alignment time")
+                        RoutineSchedule.Kind.ONCE -> L10n.s("Run")
+                        else -> L10n.s("Time")
                     },
                 )
             },
@@ -701,16 +703,16 @@ private fun TimeoutPicker(value: Int?, onSelect: (Int?) -> Unit) {
             value = value?.let { "$it minutes" } ?: "No limit",
             onValueChange = {},
             readOnly = true,
-            label = { Text("Stop if still running after") },
+            label = { Text(L10n.s("Stop if still running after")) },
             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
             modifier = Modifier
                 .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable)
                 .fillMaxWidth()
-                .semantics { contentDescription = "Routine timeout" },
+                .semantics { contentDescription = L10n.s("Routine timeout") },
         )
         ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
             DropdownMenuItem(
-                text = { Text("No limit") },
+                text = { Text(L10n.s("No limit")) },
                 onClick = {
                     expanded = false
                     onSelect(null)
@@ -747,7 +749,7 @@ private fun AgentPicker(
             value = label,
             onValueChange = {},
             readOnly = true,
-            label = { Text("Agent") },
+            label = { Text(L10n.s("Agent")) },
             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
             modifier = Modifier
                 .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable)
@@ -755,7 +757,7 @@ private fun AgentPicker(
         )
         ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
             DropdownMenuItem(
-                text = { Text("Choose an agent") },
+                text = { Text(L10n.s("Choose an agent")) },
                 onClick = {
                     expanded = false
                     onSelect("")

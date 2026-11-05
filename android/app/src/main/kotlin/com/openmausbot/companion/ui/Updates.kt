@@ -1,5 +1,7 @@
 package com.openmausbot.companion.ui
 
+import com.openmausbot.companion.core.L10n
+
 import androidx.compose.runtime.Immutable
 import com.openmausbot.companion.core.Chat
 import com.openmausbot.companion.core.CompanionState
@@ -125,7 +127,7 @@ private fun CompanionState.lastLine(threadId: String): String {
         Message.Kind.TEXT, Message.Kind.UNKNOWN -> last.text.orEmpty()
         Message.Kind.OPTIONS -> last.card?.title.orEmpty()
         Message.Kind.ACTIVITY -> last.tool?.name.orEmpty()
-        Message.Kind.SCREEN -> "Screenshot"
+        Message.Kind.SCREEN -> L10n.s("Screenshot")
         Message.Kind.DIGEST -> ""
         Message.Kind.COMPACTION -> last.compaction?.chipText ?: last.text.orEmpty()
     }
@@ -174,9 +176,9 @@ internal object UpdatesSummary {
         if (updates.isEmpty()) "All quiet" else "${updates.size} active"
 
     fun section(kind: UpdateKind): String = when (kind) {
-        UpdateKind.NEEDS_YOU -> "Needs you"
-        UpdateKind.WORKING -> "Working"
-        UpdateKind.TO_REVIEW -> "To review"
+        UpdateKind.NEEDS_YOU -> L10n.s("Needs you")
+        UpdateKind.WORKING -> L10n.s("Working")
+        UpdateKind.TO_REVIEW -> L10n.s("To review")
     }
 
     /**

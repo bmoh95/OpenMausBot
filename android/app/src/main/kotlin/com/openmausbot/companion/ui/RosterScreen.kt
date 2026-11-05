@@ -1,5 +1,7 @@
 package com.openmausbot.companion.ui
 
+import com.openmausbot.companion.core.L10n
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -300,7 +302,7 @@ fun RosterScreen(navigator: CompanionNavigator) {
                         }
                         item(key = "channels") {
                             GroupsStrip(
-                                title = "Groups",
+                                title = L10n.s("Groups"),
                                 rooms = state.unsectionedChannels,
                                 members = tiles,
                                 onOpen = { navigator.open(Chat.RoomChat(it)) },
@@ -313,7 +315,7 @@ fun RosterScreen(navigator: CompanionNavigator) {
                         if (state.botChats.isNotEmpty()) {
                             item(key = "bot-chats") {
                                 GroupsStrip(
-                                    title = "Bot threads",
+                                    title = L10n.s("Bot threads"),
                                     rooms = state.botChats,
                                     members = tiles,
                                     onOpen = { navigator.open(Chat.RoomChat(it)) },
@@ -354,7 +356,7 @@ fun RosterScreen(navigator: CompanionNavigator) {
                             if (section.channels.isNotEmpty()) {
                                 item(key = "section-${section.id}-channels") {
                                     GroupsStrip(
-                                        title = "Groups",
+                                        title = L10n.s("Groups"),
                                         rooms = section.channels,
                                         members = tiles,
                                         onOpen = { navigator.open(Chat.RoomChat(it)) },
@@ -525,7 +527,7 @@ private fun RosterHeader(name: String?, status: Session.Status, onSettings: () -
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        TouchTarget(onClick = onSettings, size = 44.dp, contentDescription = "Settings") {
+        TouchTarget(onClick = onSettings, size = 44.dp, contentDescription = L10n.s("Settings")) {
             Box(
                 modifier = Modifier
                     .size(44.dp)
@@ -541,7 +543,7 @@ private fun RosterHeader(name: String?, status: Session.Status, onSettings: () -
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(2.dp),
         ) {
-            Text("Threads", fontSize = 17.sp, fontWeight = FontWeight.SemiBold)
+            Text(L10n.s("Threads"), fontSize = 17.sp, fontWeight = FontWeight.SemiBold)
             Text(
                 text = RosterLayout.headerSubtitle(name, status),
                 fontSize = 13.sp,
@@ -553,7 +555,7 @@ private fun RosterHeader(name: String?, status: Session.Status, onSettings: () -
 
         ChromeButton(
             icon = Icons.Filled.Settings,
-            contentDescription = "Settings",
+            contentDescription = L10n.s("Settings"),
             onClick = onSettings,
         )
     }
@@ -853,7 +855,7 @@ private fun ChatRow(
                                 modifier = Modifier.size(12.dp),
                             )
                             Text(
-                                text = "Waiting on you",
+                                text = L10n.s("Waiting on you"),
                                 fontSize = 12.sp,
                                 fontWeight = FontWeight.SemiBold,
                                 color = Color.White,
@@ -919,7 +921,7 @@ private fun RosterBottomBar(
                 )
                 Box(modifier = Modifier.weight(1f)) {
                     if (bar.query.isEmpty()) {
-                        Text("Search threads", fontSize = 17.sp, color = secondaryTint)
+                        Text(L10n.s("Search threads"), fontSize = 17.sp, color = secondaryTint)
                     }
                     BasicTextField(
                         value = bar.query,
@@ -940,7 +942,7 @@ private fun RosterBottomBar(
                     TouchTarget(onClick = { onBar(bar.clearQuery()) }, size = 24.dp) {
                         Icon(
                             imageVector = Icons.Filled.Close,
-                            contentDescription = "Clear search",
+                            contentDescription = L10n.s("Clear search"),
                             tint = secondaryTint,
                             modifier = Modifier.size(20.dp),
                         )
@@ -957,7 +959,7 @@ private fun RosterBottomBar(
                     .padding(horizontal = 16.dp),
                 contentAlignment = Alignment.Center,
             ) {
-                Text("Cancel", fontSize = 17.sp)
+                Text(L10n.s("Cancel"), fontSize = 17.sp)
             }
         } else {
             UpdatesBar(
@@ -967,13 +969,13 @@ private fun RosterBottomBar(
             )
             ChromeButton(
                 icon = Icons.Filled.Search,
-                contentDescription = "Search",
+                contentDescription = L10n.s("Search"),
                 onClick = onOpenSearch,
                 size = MIN_TOUCH_TARGET,
             )
             ChromeButton(
                 icon = Icons.Filled.Add,
-                contentDescription = "Organize bots into a section",
+                contentDescription = L10n.s("Organize bots into a section"),
                 onClick = onCreateSection,
                 enabled = canCreateSection,
                 size = MIN_TOUCH_TARGET,
@@ -983,7 +985,7 @@ private fun RosterBottomBar(
             // bots into a room is the other thing — two glyphs, two actions.
             ChromeButton(
                 icon = Icons.Filled.Create,
-                contentDescription = "New bot",
+                contentDescription = L10n.s("New bot"),
                 onClick = onCreateBot,
                 enabled = canCreateBot,
                 size = MIN_TOUCH_TARGET,
@@ -1057,7 +1059,7 @@ fun StatusBanner() {
     val status by session.status.collectAsState()
     val banner: Pair<String, Color>? = when (val current = status) {
         Session.Status.Live, Session.Status.Unpaired -> null
-        Session.Status.Connecting -> "Connecting…" to secondaryTint
+        Session.Status.Connecting -> L10n.s("Connecting…") to secondaryTint
         is Session.Status.Offline -> current.message to Color(MausPalette.argb("orange"))
         Session.Status.Unauthorized ->
             "This phone was unpaired on the computer." to MaterialTheme.colorScheme.error

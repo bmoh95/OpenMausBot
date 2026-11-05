@@ -1,5 +1,7 @@
 package com.openmausbot.companion.ui
 
+import com.openmausbot.companion.core.L10n
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -105,7 +107,7 @@ fun AssistantTurnChip(
 fun WebhookMessageBody(content: WebhookMessageContent) {
     var expanded by remember(content) { mutableStateOf(false) }
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Text("Webhook task", fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = BubbleColor.mineText)
+        Text(L10n.s("Webhook task"), fontSize = 12.sp, fontWeight = FontWeight.SemiBold, color = BubbleColor.mineText)
         SelectionContainer {
             Text(content.task, fontSize = 17.sp, color = BubbleColor.mineText)
         }
@@ -116,7 +118,7 @@ fun WebhookMessageBody(content: WebhookMessageContent) {
                     .semantics { stateDescription = if (expanded) "Expanded" else "Collapsed" },
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Text("Event payload", fontSize = 13.sp, color = BubbleColor.mineText, modifier = Modifier.weight(1f))
+                Text(L10n.s("Event payload"), fontSize = 13.sp, color = BubbleColor.mineText, modifier = Modifier.weight(1f))
                 Icon(
                     if (expanded) Icons.Filled.KeyboardArrowUp else Icons.Filled.KeyboardArrowDown,
                     contentDescription = null, tint = BubbleColor.mineText,

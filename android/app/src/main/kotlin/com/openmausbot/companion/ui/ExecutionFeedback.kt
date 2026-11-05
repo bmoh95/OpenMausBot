@@ -1,5 +1,7 @@
 package com.openmausbot.companion.ui
 
+import com.openmausbot.companion.core.L10n
+
 import com.openmausbot.companion.core.ActivityDetail
 import kotlin.math.PI
 import kotlin.math.cos
@@ -141,9 +143,9 @@ object ActivityReceipt {
 
     /** The badge word, which iOS gets from `status.capitalized`. */
     fun label(status: ActivityStatus): String = when (status) {
-        ActivityStatus.RUNNING -> "Running"
-        ActivityStatus.SUCCESS -> "Success"
-        ActivityStatus.ERROR -> "Error"
+        ActivityStatus.RUNNING -> L10n.s("Running")
+        ActivityStatus.SUCCESS -> L10n.s("Success")
+        ActivityStatus.ERROR -> L10n.s("Error")
     }
 
     /**

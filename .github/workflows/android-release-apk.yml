@@ -1,0 +1,37 @@
+name: Android release APK
+
+# Unsigned on purpose. The release key is not in this repository, so the
+# maintainer (or the fork owner) signs app-release-unsigned.apk afterwards.
+# A signed build would be app-release.apk; this job never produces that name.
+on:
+  workflow_dispatch:
+  push:
+    branches: [android-ko]
+    paths:
+      - .github/workflows/android-release-apk.yml
+
+permissions:
+  contents: read
+
+jobs:
+  apk:
+    name: Assemble release APK
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-java@77dd5b2ce225ea11469928ac317850245a74ae78 # v6.2.0
+        with:
+          distribution: temurin
+          java-version: 17
+      - uses: android-actions/setup-android@be39fa834029ff78f1a44aa3bb0819b8fc2bd8fd # v4.0.4
+      - name: Accept Android SDK licenses
+        run: yes | sdkmanager --licenses || true
+      - name: Assemble release APK
+        working-directory: android
+        run: ./gradlew :app:assembleRelease --no-daemon
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: openmausbot-release-unsigned-apk
+          path: android/app/build/outputs/apk/release/app-release-unsigned.apk
+          if-no-files-found: error

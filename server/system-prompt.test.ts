@@ -427,8 +427,8 @@ describe("longCommandsPrompt", () => {
     for (const kind of [null, "local", "vps", "box"] as const) {
       const text = longCommandsPrompt(kind);
       expect(text).toContain("`timeout` in milliseconds, up to 600000");
-      expect(text).toContain("Never wait inside a command for CI, a deploy or any other job to finish (no sleep loops or repeated polls): check it once");
-      expect(text).toContain("tell the person what you made (with links). Only on a turn the person started in their own chat, set wait_until or a one-time trigger to check back and end your turn");
+      expect(text).toContain("For running jobs, use bounded waits or polls and continue independent work");
+      expect(text).toContain("Do not end the task merely because a command is still running, a first attempt failed, or a build needs another check.");
       expect(text).toContain("When the person writes while you work, answer them first.");
       expect(text).not.toContain("vm_exec");
     }
@@ -482,10 +482,10 @@ describe("reply style", () => {
     expect(built.sections.map((s) => s.id)).toEqual(["persona", "reply-style", "soul", "memory", "x", "reply-habits"]);
     expect(built.stable).toContain(CONVERSATIONAL_STYLE_PROMPT);
     expect(built.volatile).not.toContain("Reply style");
-    expect(CONVERSATIONAL_STYLE_PROMPT).toContain("complete, well-structured answer");
+    expect(CONVERSATIONAL_STYLE_PROMPT).toContain("full, well-structured answer");
     expect(CONVERSATIONAL_STYLE_PROMPT).toContain("Use headings, lists, tables, and code blocks");
     expect(CONVERSATIONAL_STYLE_PROMPT).toContain("Do not artificially shorten responses");
-    expect(CONVERSATIONAL_STYLE_PROMPT).toContain("SOUL.md");
+    expect(CONVERSATIONAL_STYLE_PROMPT).toContain("finishes the requested work");
     expect(CONVERSATIONAL_STYLE_PROMPT).not.toMatch(/keep replies short|roughly the length|no headings/i);
     expect(soulSystemPrompt("Set a thorough response style.")).toContain("rank above OpenMausBot's default Reply Style and reply-habit guidance");
   });
@@ -517,11 +517,11 @@ describe("how every bot replies", () => {
       "first check what you can already reach",
       "ask for exactly one thing, in plain words, with the reason",
       "do the parts that do not depend on it in the same turn",
-      "Never name tools or functions, the files that hold your notes or settings, MCP",
+      "For development, configuration and troubleshooting tasks, give exact relevant paths",
       "state the money facts you found: price, fees, deposit, cancellation terms",
       "Nothing that cannot be undone happens until they explicitly pick an option or say go",
       "Never ask for passwords, one-time codes or card numbers in chat.",
-      "say plainly what you did not do, offer the simplest other way (drag the file into the chat, or paste the text)",
+      "A failed tool, unreadable file, missing dependency or disconnected app is a diagnostic lead",
     ]) expect(REPLY_HABITS_PROMPT).toContain(habit);
   });
 

@@ -46,6 +46,18 @@ Goal 통합 시험은 완료 검증 턴·잘못된 판정 재검토·65턴까지
 
 ## 이미지와 배포 상태
 
+배포 전 최종 확인에서 시험 VM과 운영 VM이 같은 고정 컨테이너 이름을 써서
+충돌한 것을 발견했다. 영속 홈·프로젝트 데이터와 보존 이미지로 운영 VM을
+복구하고 GitHub 로그인과 Figma 세션을 확인했다. 기존 소유권 판정은 관리
+라벨만 확인했으므로, 다른 데이터 디렉터리의 VM도 자기 것으로 오인할 수 있었다.
+이제 실제 workspace 마운트 경로도 일치해야 관리 대상으로 판정하며, 다른
+환경의 VM을 stop/start/remove하는 것을 거부한다.
+
+텍스트 Goal 시험에는 `computer=off`를 명시했다. 수정 후 소유권/업데이트
+검사 95개와 Goal 통합 검사 19개가 통과했고, 해당 통합 시험 전후 운영 VM의
+컨테이너 ID가 유지되는 것을 별도로 확인했다. 운영 사용자 홈의 백업은
+비공개로 보관한다.
+
 공식 multiarchitecture 이미지:
 
 ```text
@@ -59,7 +71,8 @@ openmausbot-codex:0.1.150-candidate
 sha256:09022509560f9b9724cad811aad41970efb8474b60b613d3406832a9a3837340
 ```
 
-실제 이미지 ID는 배포 시 `docker image inspect`로 다시 대조한다. build context는
+위 ID는 최초 리베이스 후보이며, VM 소유권 보강을 포함한 배포 이미지는 다시
+빌드한다. 실제 이미지 ID는 배포 시 `docker image inspect`로 대조한다. build context는
 `~/openmausbot-candidate-150`이며, server bundle을 만든 소스 커밋은 그 디렉터리의
 `SOURCE-REVISION`에 기록한다. 이후 시험·문서만 바뀐 커밋과 구분한다.
 

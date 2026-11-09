@@ -197,7 +197,7 @@ export function createOneOnOneGoals(deps: OneOnOneGoalDeps) {
       step: (member, _coordinator, instructions) => step(goal, threadId, request, member, instructions),
       finish: (status, detail, text) => finish(threadId, goal, status, detail, text),
       progress: (detail, text) => deps.cards.progress(threadId, goal.run, detail, text),
-      note: (line) => store.appendMessage(threadId, { role: "bot", kind: "activity", tool: { name: line, ok: false } }),
+      note: (line) => store.appendMessage(threadId, { role: "bot", kind: "activity", tool: { name: line, ok: line.startsWith("목표 기록:") } }),
     })
       .catch((error: unknown) => finish(threadId, goal, "failed", error instanceof Error ? error.message : String(error)))
       .finally(() => {

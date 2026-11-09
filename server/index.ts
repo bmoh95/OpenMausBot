@@ -10734,7 +10734,7 @@ async function runGroupGoalOperation(args: {
       role: "bot",
       kind: "activity",
       from: { botId: args.coordinator.id, name: args.coordinator.name, color: args.coordinator.color },
-      tool: { name: text, ok: false },
+      tool: { name: text, ok: text.startsWith("목표 기록:") },
     }),
   });
 }

@@ -126,6 +126,23 @@ function room(options: { threadId?: string; shared?: { messages: Map<string, Mes
   };
 }
 
+describe("Codex room continuity", () => {
+  it("resumes the same member on its native thread and sends only unseen context", () => {
+    const r = room();
+    const codex = engine("codex-account-2", "codex");
+    r.say("Diagnose the plugin connection and continue until fixed.");
+    const first = r.run("editor", "codex-native-1", { reply: "Inspected the manifest; next check the socket." }, { instance: codex });
+    expect(first.result.mode).toBe("start");
+    r.say("Continue and verify the fix.");
+    const next = r.dispatch("editor", { instance: codex });
+    expect(next.result.mode).toBe("resume");
+    expect(next.result.send.resumeCursor).toBe("codex-native-1");
+    expect(next.result.text).toContain("Continue and verify the fix.");
+    expect(next.result.text).not.toContain("Diagnose the plugin connection");
+    expect(next.result.send.recoveryText).toContain("Diagnose the plugin connection");
+  });
+});
+
 describe("renderRoomDelta", () => {
   it("lists the new lines under one note, as the window renders them", () => {
     expect(renderRoomDelta([{ id: "a", text: "Omkar: trim the middle" }, { id: "b", text: "[Posted by @Writer]\nWriter: done" }]))
@@ -174,11 +191,11 @@ describe("renderRoomDelta", () => {
 });
 
 describe("which engines keep a room session", () => {
-  it("is Claude Code alone, for as long as its driver keeps a quiet process", () => {
-    expect(Object.keys(ROOM_SESSION_ENGINES)).toEqual(["claudeAgent"]);
+  it("supports native Claude and Codex sessions with engine-specific idle policies", () => {
+    expect(Object.keys(ROOM_SESSION_ENGINES)).toEqual(["claudeAgent", "codex"]);
     expect(roomSessionIdleMs("claudeAgent", {})).toBe(10 * 60_000);
     expect(roomSessionIdleMs("claudeAgent", { OMB_CLAUDE_SESSION_IDLE_MS: "60000" })).toBe(60_000);
-    for (const other of ["codex", "museCode", "piAgent", "constructor", "toString"]) expect(roomSessionIdleMs(other, {})).toBeUndefined();
+    for (const other of ["museCode", "piAgent", "constructor", "toString"]) expect(roomSessionIdleMs(other, {})).toBeUndefined();
   });
 });
 
@@ -214,7 +231,7 @@ describe("room sessions: turns that are not managed", () => {
     const cases: Array<{ name: string; mode: RoomDispatch["mode"]; arrange?: (r: ReturnType<typeof room>) => void; input?: Partial<RoomDispatchInput> }> = [
       { name: "setting off", mode: "legacy", arrange: (r) => { r.state.enabled = false; } },
       { name: "an engine that does not promise strict resume", mode: "legacy", input: { instance: engine("claude", "claudeAgent", false) } },
-      { name: "a strict-resume engine that is not covered", mode: "legacy", input: { instance: engine("codex", "codex", true) } },
+      { name: "a strict-resume engine that is not covered", mode: "legacy", input: { instance: engine("other", "unsupported", true) } },
       { name: "a guest-confined turn", mode: "legacy", input: { guestConfined: true } },
       { name: "a turn without the engine-hook channel", mode: "legacy", input: { hooks: false } },
       { name: "a member's first managed turn", mode: "start" },
@@ -245,10 +262,10 @@ describe("room sessions: turns that are not managed", () => {
     }
   });
 
-  it("leaves an engine that does not promise strict resume, and any engine but Claude Code, alone", () => {
+  it("leaves an engine that does not promise strict resume, and engines without a supported native session, alone", () => {
     // an adapter that does not declare the capability at all (an older Claude CLI reads as false)
     const undeclared: RoomSessionEngine = { instanceId: "claude", driverKind: "claudeAgent", adapter: { capabilities: {} } };
-    for (const instance of [engine("claude", "claudeAgent", false), undeclared, engine("codex", "codex"), engine("muse", "museCode")]) {
+    for (const instance of [engine("claude", "claudeAgent", false), undeclared, engine("muse", "museCode")]) {
       const r = room();
       r.say("Cut the intro.");
       const first = r.dispatch("editor", { instance });

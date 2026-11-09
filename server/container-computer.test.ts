@@ -612,6 +612,21 @@ describe("containerComputerStatus", () => {
     }
   });
 
+  it.each(["remove", "stop"] as const)("does not claim or %s another environment's desktop with the same managed labels", async (action) => {
+    const fake = runner({
+      "/usr/bin/which docker": "docker\n",
+      "/usr/bin/which podman": new Error("missing"),
+      "docker info --format {{.ServerVersion}}": "29\n",
+      [`docker image inspect ${IMAGE}`]: preparedImageInspect(),
+      [`docker inspect ${CONTAINER}`]: readyInspect({ Mounts: [
+        { Type: "bind", Source: "/another-environment/vm-home", Destination: VM_WORKSPACE_GUEST, RW: true },
+      ] }),
+    });
+    expect(await containerComputerStatus(fake.run, "linux")).toMatchObject({ managed: false, ready: false });
+    await expect(containerComputerAction(action, fake.run, "linux")).rejects.toThrow("was not created by OpenMausBot");
+    expect(fake.calls.some(call => /^docker (rm|stop) /.test(call))).toBe(false);
+  });
+
   it("rejects missing or unexpected host mounts instead of exposing them to the bot", async () => {
     const fake = runner({
       "/usr/bin/which docker": "docker\n",

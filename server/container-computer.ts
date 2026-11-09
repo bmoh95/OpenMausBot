@@ -518,7 +518,9 @@ export async function containerComputerStatus(
           : null;
       status.imageMatches =
         appleImage === IMAGE && status.image_id !== null && appleImageId === status.image_id;
-      status.managed = containerOwnershipLabelsMatch(detail?.configuration?.labels, target);
+      status.managed = containerOwnershipLabelsMatch(detail?.configuration?.labels, target) &&
+        Boolean(detail?.configuration?.mounts?.some(mount => mount.destination === VM_WORKSPACE_GUEST &&
+          sameWorkspaceSource(mount.source, platform, target.workspaceDir)));
       status.persistence = appleWorkspaceMountIsSafe(detail?.configuration?.mounts, platform, target.workspaceDir)
         ? "durable"
         : "unsafe";
@@ -556,7 +558,8 @@ export async function containerComputerStatus(
         imageLabelsMatch(detail?.Config?.Labels) &&
         status.image_id !== null &&
         normalizeImageId(detail?.Image) === status.image_id;
-      status.managed = containerOwnershipLabelsMatch(detail?.Config?.Labels, target);
+      status.managed = containerOwnershipLabelsMatch(detail?.Config?.Labels, target) &&
+        dockerWorkspaceBelongsToTarget(detail?.Mounts, platform, target.workspaceDir, status.runtime);
       if (status.managed) raisePidsLimit(target.containerName, detail?.HostConfig?.PidsLimit, runner.bind(null, status.runtime));
       status.persistence = dockerWorkspaceMountIsSafe(
         detail?.Mounts,
@@ -707,6 +710,17 @@ function samePodmanWindowsWorkspaceSource(source: string | undefined, expectedWo
   return actual.toLowerCase() === expected.toLowerCase();
 }
 
+function dockerWorkspaceBelongsToTarget(
+  mounts: Array<{ Type?: string; Source?: string; Destination?: string }> | undefined,
+  platform: NodeJS.Platform,
+  expectedWorkspace: string,
+  runtime: Runtime,
+): boolean {
+  const workspace = mounts?.find(mount => mount.Destination === VM_WORKSPACE_GUEST);
+  return workspace?.Type === "bind" && (sameWorkspaceSource(workspace.Source, platform, expectedWorkspace) ||
+    (runtime === "podman" && platform === "win32" && samePodmanWindowsWorkspaceSource(workspace.Source, expectedWorkspace)));
+}
+
 function dockerWorkspaceMountIsSafe(
   mounts:
     | Array<{ Type?: string; Source?: string; Destination?: string; RW?: boolean }>
@@ -716,8 +730,7 @@ function dockerWorkspaceMountIsSafe(
   runtime: Runtime = "docker",
 ): boolean {
   const workspace = mounts?.find(m => m.Destination === VM_WORKSPACE_GUEST);
-  const sourceMatches = sameWorkspaceSource(workspace?.Source, platform, expectedWorkspace) ||
-    (runtime === "podman" && platform === "win32" && samePodmanWindowsWorkspaceSource(workspace?.Source, expectedWorkspace));
+  const sourceMatches = dockerWorkspaceBelongsToTarget(mounts, platform, expectedWorkspace, runtime);
   const home = mounts?.find(m => m.Destination === "/home/cua");
   const durableHome = runtime === "docker" && localVmAdminEnabled() && mounts?.length === 2 &&
     home?.Type === "bind" && home.Source === localVmHomeDir(expectedWorkspace) && home.RW !== false;
@@ -966,7 +979,7 @@ export async function containerComputerAction(
     throw Object.assign(new Error("The Local VM is not running"), { status: 409 });
   }
   if (action === "remove" && before.container === "missing") return before;
-  if (action === "remove" && !before.managed) {
+  if ((action === "remove" || action === "stop" || action === "start") && !before.managed) {
     throw Object.assign(
       new Error(
         `The existing container named ${target.containerName} was not created by OpenMausBot; remove it manually in ${runtime}`,

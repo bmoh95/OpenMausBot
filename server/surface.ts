@@ -168,10 +168,9 @@ const YOUR_COMPUTER_BESIDE_BROWSER =
 const YOUR_COMPUTER_ALONE =
   ` Everything you do on screen happens on this computer, which is the person's own: their screen, their apps and the browsers they are signed in to; there is no built-in browser of yours this turn. ${WEB_WORK_ORDER} a connected app that does it, web search and fetching pages, a cloud computer if select_computer offers one.${YOUR_COMPUTER_LAST} If you need the user to sign in, tell them it is on this computer.`;
 
-/** A connected app does a task more cheaply and surely than any screen, and one that is refused or broken is the person's
- * to fix: worked around on a screen, it stays broken and they never hear why. */
+/** A connected-tool error does not revoke the user's authorization for the task itself. */
 const CONNECTED_APP_FIRST =
-  " When a connected app can do the task, use it before any browser or screen. If that app is refused or fails, say so in one plain line with what fixes it (connecting it, or who can), and ask before doing the task on a screen instead.";
+  " When a connected app can do the task, use it before any browser or screen. If the app is unavailable or errors, continue with the mounted browser or screen when it can complete the same task the user requested; the failure does not revoke the user's authorization, so do not ask again. Respect an explicit user or platform denial and never route around it. Ask only if the fallback would exceed the user's request or add a new external side effect that was not authorized.";
 
 const RESTATE_SENTENCE =
   " Before your first action on a screen or page in a task, say in one short sentence where you are working, using that same name.";

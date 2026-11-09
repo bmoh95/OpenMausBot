@@ -76,7 +76,33 @@ sha256:09022509560f9b9724cad811aad41970efb8474b60b613d3406832a9a3837340
 `~/openmausbot-candidate-150`이며, server bundle을 만든 소스 커밋은 그 디렉터리의
 `SOURCE-REVISION`에 기록한다. 이후 시험·문서만 바뀐 커밋과 구분한다.
 
-이 후보를 준비하는 동안 운영 서버는 0.1.149 기반으로 계속 실행했다.
-`custom/production`과 기존 Android `main`은 이 후보로 이동하지 않았다.
-실제 계정 로그인·사용량, 기존 데이터 migration, 실시간 화면 제어와 외부 MCP의
-운영 0.1.150 검증은 배포 과정에서 별도로 확인해야 한다.
+검증 단계의 운영 서버는 0.1.149 기반이었다. 검증 후보와 운영 전환은 별도 단계로
+진행했으며, 기존 Android `main`은 변경하지 않았다.
+
+## 프로덕션 전환 — 2026-11-09 UTC
+
+사용자의 배포 요청 후 `omb`를 다음 이미지로 전환했다.
+
+```text
+openmausbot-codex:0.1.150-candidate
+sha256:c33b6444c48ae01de9912d26a43d865ceeeb6fa49aa78e60832339a552673a92
+server build source: c592ddabaa872f59eca3aaa7943f8eea3a9f0c48
+```
+
+- 실행 번들의 버전 `0.1.150`, 프로덕션 컨테이너 healthy 확인.
+- 공개 HTTPS의 웹 화면과 health API HTTP 200 확인.
+- 기존 Bot 9개, 그룹 4개의 ID·모델·추론 설정·Full·SOUL 해시·연결 설정 대조:
+  선택한 설정 필드에 차이 없음.
+- 전체 MCP 설정 해시, AI 인스턴스 구성과 Local VM 구성 유지 확인.
+- 두 Codex 계정 모두 ChatGPT 로그인 상태 유지 확인. MCP 6개는 기존 설정대로
+  enabled임을 확인했으며, 외부 서비스 각각의 실제 작업 성공을 뜻하지는 않는다.
+- 내부 SSE 스트림 HTTP 200 및 첫 프레임 수신 확인.
+- 공유 VM ready/managed/imageMatches/persistence 정상, 관리자 sudo 및 실제 화면
+  캡처 성공. GitHub 로그인과 Figma 세션도 복구 후 확인.
+- 사용자가 직접 Take Control/Hand Back하는 동작과 외부 MCP의 실제 파일 작업은
+  이번 전환 후 새로 수행하지 않았다.
+
+배포 전 설정·온라인 SQLite 사본·홈 백업과 이전 compose를 비공개로 보관한다.
+이전 하네스 이미지는 `openmausbot-codex:rollback-before-0.1.150`으로 보존한다.
+복구 시 최신 데이터부터 다시 보존하고, 이전 snapshot을 현재 대화 위에 바로
+덮어쓰지 않는다. DB의 향후 변경까지 역호환된다고 가정하지 않는다.

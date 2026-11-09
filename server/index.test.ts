@@ -13779,7 +13779,7 @@ describe("bot memory API", () => {
       await api("PATCH", `/api/bots/${bot.id}`, { soul: "Never file noise.", replyStyle: "conversational" });
       const after = await api("GET", `/api/bots/${bot.id}/system-prompt`);
       expect(after.body.sections[1].id).toBe("reply-style");
-      expect(after.body.sections[1].text).toContain("complete, well-structured answer");
+      expect(after.body.sections[1].text).toContain("full, well-structured answer");
       expect(after.body.sections[2].id).toBe("soul");
       expect(after.body.sections[2].text).toContain("Never file noise.");
       expect(after.body.sections[2].text).toContain("rank above OpenMausBot's default Reply Style and reply-habit guidance");

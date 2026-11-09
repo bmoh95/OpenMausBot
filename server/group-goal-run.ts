@@ -298,7 +298,7 @@ export async function runGoalRun<Bot extends GoalRunMember>(deps: GoalRunDeps<Bo
         deps.finish("limit-reached", "작업 완료 검증에 필요한 턴이 남지 않았습니다. 같은 대화에서 목표를 이어서 검증해 주세요.");
         return;
       }
-      const verifier = deps.solo ? coordinator : (goalMembers.find((m) => !m.hidden && m.id !== coordinator.id && m.id !== lastWorkerId) ?? goalMembers.find((m) => !m.hidden && m.id !== lastWorkerId));
+      const verifier = deps.solo ? coordinator : (goalMembers.find((m) => !m.hidden && m.id !== coordinator.id && m.id !== lastWorkerId) ?? goalMembers.find((m) => !m.hidden && m.id !== lastWorkerId) ?? coordinator);
       const verifierBot = verifier && deps.current(verifier.id);
       if (!verifierBot || verifierBot.hidden) {
         deps.finish("blocked", "완료를 확인할 검증 봇이 없습니다. 작업 결과를 확인한 뒤 이어서 진행해 주세요.");

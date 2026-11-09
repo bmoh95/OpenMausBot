@@ -25,6 +25,8 @@ let stopScopedLeadFinishGate = "";
 let base = "";
 let stderr = "";
 
+const verificationReply = "VERDICT: PASS\nEVIDENCE: Fixture confirmed the requested result.";
+
 const completeReplies = [
   [
     "Scout should verify the draft.\n<openmaus-goal>{\"status\":\"continue\",",
@@ -32,9 +34,10 @@ const completeReplies = [
   ],
   "The draft is accurate and the cited evidence checks out.",
   "The verified draft is ready to ship.\n<openmaus-goal>{\"status\":\"completed\",\"detail\":\"Draft produced and independently verified.\"}</openmaus-goal>",
+  verificationReply,
 ];
 
-const loopReplies = Array.from({ length: 13 }, (_, index) =>
+const loopReplies = Array.from({ length: 65 }, (_, index) =>
   index % 2 === 0
     ? `More work is needed.\n<openmaus-goal>{"status":"continue","next":"Looper","instruction":"Try approach ${index / 2 + 1}","detail":"Still working"}</openmaus-goal>`
     : `Approach ${Math.ceil(index / 2)} did not finish the task.`,
@@ -112,6 +115,7 @@ beforeAll(async () => {
           FAKE_CLAUDE_REPLIES: JSON.stringify([
             "The unrelated direct task is complete.",
             "The queued team goal is complete.\n<openmaus-goal>{\"status\":\"completed\",\"detail\":\"Waited for the lead, then completed normally.\"}</openmaus-goal>",
+            verificationReply,
           ]),
           FAKE_CLAUDE_REPLY_STATE: join(home, "busy-goal-replies.txt"),
         },
@@ -139,6 +143,7 @@ beforeAll(async () => {
           FAKE_CLAUDE_REPLIES: JSON.stringify([
             "The unrelated direct research is complete.",
             "Evidence gathered for the coordinator.",
+            verificationReply,
           ]),
           FAKE_CLAUDE_REPLY_STATE: join(home, "busy-worker-replies.txt"),
         },
@@ -168,6 +173,7 @@ beforeAll(async () => {
           FAKE_CLAUDE_REPLIES: JSON.stringify([
             "The worker's unrelated direct task completed naturally.",
             "Scheduled analysis returned to the coordinator.",
+            verificationReply,
           ]),
           FAKE_CLAUDE_REPLY_STATE: join(home, "stop-scoped-worker-replies.txt"),
           FAKE_CLAUDE_TRANSIENTS: "1",
@@ -189,6 +195,7 @@ beforeAll(async () => {
           FAKE_CLAUDE_SLOW_FINISH_GATE: routineGoalFinishGate,
           FAKE_CLAUDE_REPLIES: JSON.stringify([
             "The scheduled review is complete.\n<openmaus-goal>{\"status\":\"completed\",\"detail\":\"Scheduled team review completed.\"}</openmaus-goal>",
+            verificationReply,
           ]),
           FAKE_CLAUDE_REPLY_STATE: join(home, "routine-goal-replies.txt"),
         },
@@ -263,7 +270,7 @@ describe("goal-driven channel runs", () => {
     }, { timeout: hostTimeout(10_000) }).toMatchObject({
       status: "completed",
       coordinatorBotId: lead.id,
-      turnCount: 3,
+      turnCount: 4,
       detail: "Draft produced and independently verified.",
     });
 
@@ -273,7 +280,7 @@ describe("goal-driven channel runs", () => {
       .toBe("Goal completed: Draft produced and independently verified.");
     expect(current.working).toBe(false);
     expect(current.messages.filter((message: { kind: string; role?: string }) => message.kind === "text" && message.role === "bot")
-      .map((message: { from?: { name?: string } }) => message.from?.name)).toEqual(["Lead", "Scout", "Lead"]);
+      .map((message: { from?: { name?: string } }) => message.from?.name)).toEqual(["Lead", "Scout", "Lead", "Scout"]);
     expect(JSON.stringify(current.messages)).not.toContain("<openmaus-goal>");
   });
 
@@ -345,7 +352,7 @@ describe("goal-driven channel runs", () => {
         id: cardId,
         status: "completed",
         detail: "Waited for the lead, then completed normally.",
-        turnCount: 1,
+        turnCount: 2,
       });
     } finally {
       await api("POST", `/api/groups/${room.id}/interrupt`, {}).catch(() => undefined);
@@ -435,8 +442,8 @@ describe("goal-driven channel runs", () => {
         cards: 1,
         status: "completed",
         detail: "Specialist research incorporated after their direct task finished.",
-        turnCount: 3,
-        speakers: ["Worker coordinator", "Busy specialist", "Worker coordinator"],
+        turnCount: 4,
+        speakers: ["Worker coordinator", "Busy specialist", "Worker coordinator", "Busy specialist"],
         workerDirectBusy: false,
         directFinishedNaturally: true,
       });
@@ -863,7 +870,7 @@ describe("goal-driven channel runs", () => {
         cards: 1,
         goalStatus: "completed",
         detail: "Scheduled goal survived the coordinator's direct Stop.",
-        turnCount: 3,
+        turnCount: 4,
       });
     } finally {
       writeFileSync(stopScopedWorkerFinishGate, "finish");
@@ -1011,8 +1018,8 @@ describe("goal-driven channel runs", () => {
     await expect.poll(async () => {
       const page = await api("GET", `/api/threads/${started.body.threadId}/messages?around=${card.id}&limit=1`);
       return page.body.messages[0]?.goalRun;
-    }, { timeout: 15_000 }).toMatchObject({ status: "limit-reached", turnCount: 13, maxTurns: 13 });
-  });
+    }, { timeout: hostTimeout(120_000) }).toMatchObject({ status: "limit-reached", turnCount: 65, maxTurns: 65 });
+  }, 150_000);
 
   it("never treats a failed provider turn as a completed goal", async () => {
     const lead = (await api("POST", "/api/bots", {

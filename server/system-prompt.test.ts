@@ -474,18 +474,20 @@ describe("reply style", () => {
     expect(plain.sections.map((s) => s.id)).not.toContain("reply-style");
   });
 
-  it("puts the conversational guidance right after the soul, in the stable half", () => {
+  it("puts conversational defaults before SOUL.md so standing instructions can override them", () => {
     const built = buildSystemPrompt("persona", "soul", [
       { id: "memory", label: "Memory", text: " memory" },
       { id: "x", label: "X", text: " tail" },
     ], undefined, { replyStyle: "conversational" });
-    expect(built.sections.map((s) => s.id)).toEqual(["persona", "soul", "reply-style", "memory", "x", "reply-habits"]);
+    expect(built.sections.map((s) => s.id)).toEqual(["persona", "reply-style", "soul", "memory", "x", "reply-habits"]);
     expect(built.stable).toContain(CONVERSATIONAL_STYLE_PROMPT);
     expect(built.volatile).not.toContain("Reply style");
-    expect(CONVERSATIONAL_STYLE_PROMPT).toMatch(/short/i);
-    expect(CONVERSATIONAL_STYLE_PROMPT).toMatch(/blank line/);
-    expect(CONVERSATIONAL_STYLE_PROMPT).toMatch(/code block/);
-    expect(CONVERSATIONAL_STYLE_PROMPT).toMatch(/language/);
+    expect(CONVERSATIONAL_STYLE_PROMPT).toContain("complete, well-structured answer");
+    expect(CONVERSATIONAL_STYLE_PROMPT).toContain("Use headings, lists, tables, and code blocks");
+    expect(CONVERSATIONAL_STYLE_PROMPT).toContain("Do not artificially shorten responses");
+    expect(CONVERSATIONAL_STYLE_PROMPT).toContain("SOUL.md");
+    expect(CONVERSATIONAL_STYLE_PROMPT).not.toMatch(/keep replies short|roughly the length|no headings/i);
+    expect(soulSystemPrompt("Set a thorough response style.")).toContain("rank above OpenMausBot's default Reply Style and reply-habit guidance");
   });
 });
 
@@ -498,16 +500,20 @@ describe("how every bot replies", () => {
     }
   });
 
-  it("asks for an opening line on longer work, the answer first, one question at most, plain words and money facts first", () => {
+  it("asks for useful progress, a complete answer, plain words and money facts first", () => {
     for (const habit of [
-      "first send one short line saying what you are doing and why",
-      "add one line with what they will get and roughly how long",
+      "send one concise progress line in the user's language before starting",
+      "say what they will get and roughly how long when useful",
+      "Progress notes do not replace completing the work or giving a complete final answer",
       "A quick answer skips both.",
-      "open with the verdict, result or answer",
+      "state the answer, result, or current status first",
+      "enough relevant reasoning, evidence, steps, caveats, and verification",
       "say in one line where they came from and when",
       "Use the units, currency, time zone and numbers the person has told you about",
-      "no \"let me know if…\", no \"hope this helps\", no offers or questions out of habit",
-      "Add at most one concrete next step, and only when it clearly helps.",
+      "continue after a failed attempt by trying a different reasonable approach",
+      "doing independent work that does not depend on the blocker",
+      "state the failed step, alternatives tried, and exact next step needed",
+      "avoid filler, repeated recaps, and habitual questions",
       "first check what you can already reach",
       "ask for exactly one thing, in plain words, with the reason",
       "do the parts that do not depend on it in the same turn",

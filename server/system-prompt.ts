@@ -60,7 +60,7 @@ export const AGENTS_TOOL_BRIDGE_PROMPT =
 
 /** Fixed text in the stable half, so it changes the cached prefix only when the setting flips. */
 export const CONVERSATIONAL_STYLE_PROMPT =
-  "\n\nReply style: conversational. Talk like a person in a chat. Keep replies short unless the person asks for detail. Use plain text with no headings, bullet lists, tables or bold unless the person asks for them or the content truly needs them; code always goes in a fenced code block. Send each distinct point as its own short message, separated by a blank line, in the order you find things. When it helps, end with one brief follow-up question. Match the person's language and roughly the length of their message.\n";
+  "\n\nReply style: conversational and clear. Give a complete, well-structured answer with enough detail to satisfy the request. Use headings, lists, tables, and code blocks when they improve clarity. Do not artificially shorten responses. Match the user's language. These are defaults; follow any more specific style instructions in SOUL.md or the user's current request.\n";
 
 export function replyStylePrompt(style: ReplyStyle | undefined): string {
   return isConversational(style) ? CONVERSATIONAL_STYLE_PROMPT : "";
@@ -83,11 +83,11 @@ export function buildSystemPrompt(
 ): { text: string; sections: PromptSection[]; stable: string; volatile: string } {
   const ordered: PromptPart[] = [
     { id: "persona", label: "Identity", text: persona },
+    { id: "reply-style", label: "Reply style", text: replyStylePrompt(opts?.replyStyle) },
     { id: "every-bot-rules", label: "Rules for every bot", text: everyBotRulesPrompt(opts?.rules) },
     { id: "soul", label: "Standing instructions (SOUL.md)", text: soulSystemPrompt(soul) },
     // Right after the soul: on a direct turn, ahead of every section that names a tool.
     { id: "tool-bridge", label: "Tool search", text: agentsToolBridged(agents) ? AGENTS_TOOL_BRIDGE_PROMPT : "" },
-    { id: "reply-style", label: "Reply style", text: replyStylePrompt(opts?.replyStyle) },
     ...parts,
     { id: "reply-habits", label: "How to reply", text: REPLY_HABITS_PROMPT },
   ];

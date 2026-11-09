@@ -4,7 +4,7 @@
 
 | 이름 | 역할 |
 |---|---|
-| `origin` | `https://github.com/Beemo95/OpenMausBot.git` — 커스텀 코드 보관 |
+| `origin` | `https://github.com/bmoh95/OpenMausBot.git` — 커스텀 코드 보관 |
 | `upstream` | `https://github.com/milind-soni/OpenMausBot.git` — 공식 소스와 릴리스 |
 | `origin/custom/production` | 검증한 운영 소스 기준 브랜치 |
 | `deploy/custom-fork/upstream-base` | 현재 커스텀 브랜치가 기반으로 삼는 공식 태그 |
@@ -12,8 +12,10 @@
 
 Git에는 소스와 이 절차를 보관한다. Bot 설정·대화 DB·OAuth 인증·브라우저
 프로필·실제 배포 환경변수·VM 이미지·백업은 별도의 비공개 운영 데이터다.
-서버의 운영 설정과 데이터를 Git에 추가하지 않는다. 이 공개 fork의 기본
-브랜치는 `custom/production`이고, 상속된 GitHub Actions는 비활성화한다.
+서버의 운영 설정과 데이터를 Git에 추가하지 않는다. 이 공개 fork의 기존
+기본 브랜치 `main`과 Android 빌드 워크플로는 유지한다. VPS 수정사항은
+`custom/production`에서 관리하며, 기존 `main`으로 자동 병합하지 않는다.
+GitHub Actions의 기존 저장소 설정도 유지한다.
 
 ## 새 릴리스 준비
 

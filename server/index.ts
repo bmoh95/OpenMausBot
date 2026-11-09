@@ -455,7 +455,7 @@ import { screenFrameHash, screenSurfaceForTool, screenTouchingTool, settledFrame
 import { asSchedule, RoutineRequestService } from "./routine-requests.ts"; import { ownerSpokeOnly } from "./cloud-routine-level.ts"; import { routineRunCard, routineRunFallbackText } from "./routine-run-card.ts";
 import { activeRoutinesContext } from "./active-routines-context.ts";
 import { createRefusedHandoffs } from "./host/refused-handoffs.ts"; import { automationContextText, createAutomationReports, newestAutomationLines } from "./automation-reports.ts"; import { createAutomationDestinations } from "./automation-destinations.ts"; import { createTeamRoutines } from "./host/team-routines.ts"; import { botOwner } from "../shared/bot-owner.ts"; import { forgetMember } from "./bot-owners.ts"; import { createProactive } from "./host/proactive.ts"; import { createFirstHourHooks, startFirstHour, welcomeDonePatch } from "./host/first-hour-host.ts"; import { greetingMessage } from "./host/first-hour.ts"; import { READ_AND_DRAFT_PARTS, READ_AND_DRAFT_REFUSAL, READ_AND_DRAFT_TOOLS, recordsAnswer } from "./read-and-draft.ts"; import { createPresenceRoutes } from "./routes/presence.ts"; import { needsYouNow } from "./today.ts"; import { createTeamPresenceHost } from "./host/team-presence-host.ts";
-import { engineLabel, LimitResetClock, nearLimitNote } from "./limit-resets.ts"; import { loadPlanUsage, planAccountsFromInstances } from "./plan-usage.ts"; import { LimitFailovers, limitBackupAllowed } from "./limit-failover.ts"; import { createLimitResetRoutes } from "./routes/limit-resets.ts";
+import { engineLabel, LimitResetClock, nearLimitNote } from "./limit-resets.ts"; import { loadPlanUsage, planAccountsFromInstances } from "./plan-usage.ts"; import { failoverLine, LimitFailovers, limitBackupAllowed, signedOutLine } from "./limit-failover.ts"; import { createLimitResetRoutes } from "./routes/limit-resets.ts";
 import { parseTriggerRequest, triggerTarget } from "./trigger-tools.ts"; import { WebhookRequestError, WebhookRequestService } from "./webhook-requests.ts"; import { createAppTriggerHost } from "./app-trigger-host.ts";
 import { appliesNow, directApply, UNDO_STALE, type DirectApply } from "./direct-apply.ts";
 import { createTeamMemoryRequests } from "./team-memory-requests.ts";
@@ -6129,6 +6129,7 @@ function continueComputerSelection(threadId: string, generation: string | undefi
 
 /** An interrupt or steer must reach the engine actually running, whatever the bot's settings say now. */
 const runningTurnEngines = new Map<string, NonNullable<ReturnType<typeof registry.get>>>();
+const runningTurnSelections = new Map<string, ModelSelection>();
 function runningTurnInstance(bot: BotRecord | null | undefined, threadId: string): ReturnType<typeof registry.get> {
   return runningTurnEngines.get(threadId) ?? (bot ? registry.get(bot.modelSelection.instanceId) : null);
 }
@@ -6359,11 +6360,18 @@ bus.subscribe((event: RuntimeEvent) => {
   }
   const routineRun = privateImageEvent ? null : (routines?.handleRuntimeEvent(event) ?? null);
   const replayed = savedSteps.dispatch.answering(event); limitClock.noteRuntimeEvent(replayed ? undefined : runningTurnEngines.get(event.threadId)?.instanceId, event);
-  const ownerBot = store.botByThread(event.threadId); // A quick route's model is the one this turn ran on, so its holds and its working turns are that model's.
-  const bot = ownerBot ? botForThread(ownerBot.id, event.threadId) ?? undefined : undefined; if (bot && !replayed) limitTakeover.noteRuntimeEvent(bot.id, { ...bot.modelSelection, model: quickFallback.routedModel(event.threadId) ?? bot.modelSelection.model }, event);
+  const ownerBot = store.botByThread(event.threadId); // A quick route or room takeover's model is the one this turn ran on, so its holds match the refusal.
+  const bot = ownerBot ? botForThread(ownerBot.id, event.threadId) ?? undefined : undefined;
+  if (bot && !replayed) limitTakeover.noteRuntimeEvent(bot.id, runningTurnSelections.get(event.threadId)
+    ?? { ...bot.modelSelection, model: quickFallback.routedModel(event.threadId) ?? bot.modelSelection.model }, event);
   const group = bot ? undefined : store.groupByThread(event.threadId);
-  if (!bot && !group) return;
   const speaker = group ? groupSpeakers.get(event.threadId) : undefined;
+  if (group && speaker && !replayed) {
+    const roomBot = store.bot(speaker.botId);
+    if (roomBot) limitTakeover.noteRuntimeEvent(roomBot.id, runningTurnSelections.get(event.threadId) ?? roomBot.modelSelection, event);
+  }
+  if (event.type === "turn.completed" || event.type === "session.exited") runningTurnSelections.delete(event.threadId);
+  if (!bot && !group) return;
 
   const pushMessage = (m: Omit<Message, "id" | "at">) => {
     const owner = bot ? directRequestOwners.get(event.threadId) : undefined;
@@ -8416,6 +8424,7 @@ async function beginTurn(
         throw new DirectTurnSetupCancelled("turn stopped before dispatch");
       }
       runningTurnEngines.set(threadId, instance);
+      runningTurnSelections.set(threadId, { instanceId, model, ...(effort ? { effort } : {}), ...(variant ? { variant } : {}) });
       // Re-decide from the soul actually sent, except on an unattended continuation wake, so a session started under an old soul never survives a soul change by laundering its record.
       const dispatchedConfig = sessionConfig(liveBot?.soul ?? bot.soul);
       if (strictResume && !(opts?.cardContinuation && continuingRoutine) && dispatchedConfig !== plannedConfig) dispatchContext = decideContext(dispatchedConfig);
@@ -8516,6 +8525,7 @@ async function beginTurn(
       releaseTurnResources(resourceOwner);
       if (ownsLatestGeneration) {
         runningTurnEngines.delete(threadId);
+        runningTurnSelections.delete(threadId);
         endMemoryTurn(threadId);
         clearTurnDigestState(threadId);
         releaseLocalVmThread(threadId);
@@ -9566,6 +9576,9 @@ function reconcileParkedRoots(): void {
 const MAX_GROUP_HOPS = 3;
 
 type GroupMemberTurnOutcome = GoalStepOutcome;
+type RoomTakeoverScope = "engine" | "model" | "credits" | "signed-out";
+type RoomLimitTakeover = { from: ModelSelection; to: ModelSelection; scope: RoomTakeoverScope; resetsAt?: number };
+type RoomModelOverride = { selection: ModelSelection; primary: ModelSelection; takeover?: RoomLimitTakeover };
 type GroupTurnOrchestration = {
   roomHandoffId?: string;
   resumed?: boolean;
@@ -9580,7 +9593,33 @@ type GroupTurnOrchestration = {
   onTurnStarted?: (turnId: string) => void;
   coordination?: { id: string; settle: (outcome: HostTurnResult) => void };
   goalRunId?: string;
+  /** The user's request that this root turn answers; a retry is barred if a newer user line arrives. */
+  requestMessageId?: string;
 };
+
+function sameRoomModelSelection(a: ModelSelection, b: ModelSelection): boolean {
+  return a.instanceId === b.instanceId && a.model === b.model && a.effort === b.effort && a.variant === b.variant;
+}
+
+function announceRoomLimitTakeover(bot: BotRecord, threadId: string, takeover: RoomLimitTakeover): void {
+  const from = takeover.scope === "model" || takeover.scope === "credits"
+    ? `${engineName(takeover.from.instanceId)} · ${takeover.from.model}` : engineName(takeover.from.instanceId);
+  const to = takeover.to.instanceId === takeover.from.instanceId
+    ? `${engineName(takeover.to.instanceId)} · ${takeover.to.model}` : engineName(takeover.to.instanceId);
+  const line = takeover.scope === "signed-out" ? signedOutLine(from, to) : failoverLine(from, to, takeover.resetsAt);
+  limitTakeover.tell(bot, takeover.from, {
+    scope: takeover.scope,
+    ...(takeover.resetsAt ? { resetsAt: takeover.resetsAt } : {}),
+    backup: takeover.to,
+  });
+  const recovery = `recovery: ${line}`;
+  if (store.messagesFor(threadId).some((message) => message.role === "bot" && message.kind === "activity" && message.tool?.name === recovery)) return;
+  store.appendMessage(threadId, {
+    role: "bot", kind: "activity",
+    from: { botId: bot.id, name: bot.name, color: bot.color },
+    tool: { name: recovery, ok: true },
+  });
+}
 
 function teammateReportContext(requestId: string, readerBotId?: string): string {
   const node = coordinator.node(requestId);
@@ -9643,6 +9682,8 @@ async function runClaimedGroupMemberTurn(
   operation?: GroupTurnOperation,
   // Rebuild the turn once from the fresh bot rather than mix a stale adapter with fresh permissions.
   setupRetry = 0,
+  modelOverride?: RoomModelOverride,
+  limitRetryCount = 0,
 ): Promise<boolean> {
   if (workspaceMaintenance.active || moveFreeze.frozen()) {
     onDispatchError?.(moveFreeze.refusal() ?? "A workspace backup or restore is in progress.");
@@ -9672,11 +9713,23 @@ async function runClaimedGroupMemberTurn(
   noteGroupTurn(spoken, botId);
   // The same resolver as the readiness re-check below, or a Chief's delegated level makes every such turn retry and settle busy.
   const preparedApprovalMode = roomTurnApprovalMode(bot, threadId, orchestration);
-  const preparedSelection = { ...bot.modelSelection };
+  const primarySelection = { ...bot.modelSelection };
+  let roomModelOverride = modelOverride;
+  let preparedSelection = { ...(roomModelOverride?.selection ?? primarySelection) };
+  let roomTakeover = roomModelOverride?.takeover;
+  if (!roomModelOverride) {
+    const held = limitTakeover.heldAtStart(bot, primarySelection, false, preparedApprovalMode);
+    const backup = held ? limitTakeover.backups(bot.id, primarySelection, held.scope, preparedApprovalMode)[0] : undefined;
+    if (held && backup) {
+      roomTakeover = { from: primarySelection, to: backup, scope: held.scope, ...(held.resetsAt ? { resetsAt: held.resetsAt } : {}) };
+      roomModelOverride = { primary: primarySelection, selection: backup, takeover: roomTakeover };
+      preparedSelection = { ...backup };
+    }
+  }
   const preparedComposio = bot.composio;
-  const instance = registry.get(bot.modelSelection.instanceId);
+  const instance = registry.get(preparedSelection.instanceId);
   const userName = userNameFor(threadId);
-  if (providerInstancesChanging.has(bot.modelSelection.instanceId)) {
+  if (providerInstancesChanging.has(preparedSelection.instanceId)) {
     onDispatchError?.(`${bot.name}'s provider account is being updated — try again shortly`);
     return true;
   }
@@ -9747,6 +9800,7 @@ async function runClaimedGroupMemberTurn(
   let roomOutcome: GroupMemberTurnOutcome | undefined;
   let roomReply = "";
   let roomFailure: string | undefined;
+  let deferCoordinationSettle = false;
   const reportDispatchError = (message: string) => { roomFailure = message; onDispatchError?.(message); };
   try {
   assertWithinBudget(cfg, DATA_DIR);
@@ -9767,6 +9821,7 @@ async function runClaimedGroupMemberTurn(
   const latestUser = [...store.activePath(threadId)].reverse().find(
     (message) => message.role === "user" && message.kind === "text" && message.text,
   );
+  if (orchestration && !orchestration.requestMessageId && latestUser) orchestration.requestMessageId = latestUser.id;
   const usesNativeImageInput = instance.adapter.capabilities.nativeImageInput === true;
   // A drained burst runs as one turn: recover its lines by queueId, not position.
   const burstIds = new Set(operation?.queuedQueueIds ?? []);
@@ -9842,12 +9897,9 @@ async function runClaimedGroupMemberTurn(
     : Boolean(readyGroup && store.groupTaskByThread(readyGroup.id, threadId));
   if (!readyGroup || !stillOwnsThread || !readyGroup.memberIds.includes(readyBot.id)) return false;
   const setupChanged =
-    registry.get(readyBot.modelSelection.instanceId) !== instance ||
+    registry.get(preparedSelection.instanceId) !== instance ||
     roomTurnApprovalMode(readyBot, threadId, orchestration) !== preparedApprovalMode ||
-    readyBot.modelSelection.instanceId !== preparedSelection.instanceId ||
-    readyBot.modelSelection.model !== preparedSelection.model ||
-    readyBot.modelSelection.effort !== preparedSelection.effort ||
-    readyBot.modelSelection.variant !== preparedSelection.variant ||
+    !sameRoomModelSelection(readyBot.modelSelection, primarySelection) ||
     readyBot.composio !== preparedComposio;
   if (setupChanged) {
     if (setupRetry === 0) {
@@ -9866,6 +9918,8 @@ async function runClaimedGroupMemberTurn(
         orchestration,
         operation,
         1,
+        sameRoomModelSelection(readyBot.modelSelection, primarySelection) ? roomModelOverride : undefined,
+        limitRetryCount,
       );
     }
     if (orchestration) {
@@ -9966,7 +10020,7 @@ async function runClaimedGroupMemberTurn(
   const roomPlaceRefusal = roomKind && computerPlaceRefusal(roomKind);
   if (roomPlaceRefusal) throw Object.assign(new Error(roomPlaceRefusal.message), { code: roomPlaceRefusal.code });
   if (!roomTeamComputer && roomPlan.computer === "cloud") {
-    const unsupported = cloudPlaceRefusal(cloudEngine(instance, readyBot.modelSelection.model), "room", readyBot.name)
+      const unsupported = cloudPlaceRefusal(cloudEngine(instance, preparedSelection.model), "room", readyBot.name)
       ?? computerToolsRefusal(readyBot.toolScope, "room", readyBot.name);
     if (unsupported) throw unsupported;
   }
@@ -10046,7 +10100,7 @@ async function runClaimedGroupMemberTurn(
     // The speaker's desktop, never the coordinator's; claim the lease before asynchronous VM setup.
     if (readyBot.computer === "vm") {
       if (instance.adapter.capabilities.computerMcp !== true) {
-        throw placeUnavailable("vm", { state: "vm-cannot", params: { bot: readyBot.name, model: cloudEngine(instance, readyBot.modelSelection.model).name }, source: "room" }, Boolean(CLOUD_HOME));
+        throw placeUnavailable("vm", { state: "vm-cannot", params: { bot: readyBot.name, model: cloudEngine(instance, preparedSelection.model).name }, source: "room" }, Boolean(CLOUD_HOME));
       }
       const target = { ...localVmTargetForThread(readyBot.id, threadId) };
       await waitForLocalVmUpdate(target, threadId, roomSetupIsCurrent, { botId: readyBot.id, name: readyBot.name, color: readyBot.color });
@@ -10231,6 +10285,8 @@ async function runClaimedGroupMemberTurn(
   const turnTexts: string[] = [];
   let turnCompletedOk = false;
   let providerTurnId: string | undefined;
+  let completedProviderTurnId: string | undefined;
+  let limitRetryUnsafe = false;
   let abandoned = false;
   const retirementOwner = `room-abandoned:${randomUUID()}`;
   const abandonProviderTurn = () => {
@@ -10278,8 +10334,11 @@ async function runClaimedGroupMemberTurn(
       if (e.threadId !== threadId) return;
       if (providerTurnId && e.turnId && e.turnId !== providerTurnId) return;
       deadline.observe(e);
+      if (e.type === "item.started" || e.type === "content.delta" ||
+          (e.type === "item.completed" && !(e.itemType === "assistant_text" && e.synthetic === true))) limitRetryUnsafe = true;
       if (e.type === "item.completed" && e.itemType === "assistant_text") turnTexts.push(e.text);
       else if (e.type === "turn.completed") {
+        completedProviderTurnId = e.turnId ?? providerTurnId;
         turnCompletedOk = e.ok;
         const end = roomTurnEnd(e, Boolean(orchestration), roomClaimFailure);
         if (orchestration && end.stopReason !== undefined) {
@@ -10310,6 +10369,7 @@ async function runClaimedGroupMemberTurn(
     const roomRecalled = cardContinuation ? "" : autoRecallPrompt(bot, threadId, resolvedLatestImages.text, { conversations: false, userName });
     const turnApprovalMode = roomTurnApprovalMode(readyBot, threadId, orchestration);
     if (!done) releaseTurnLevel = roomTurnLevels.dispatched(threadId, readyBot.id, turnApprovalMode);
+    if (roomTakeover) announceRoomLimitTakeover(readyBot, threadId, roomTakeover);
     const { reset: roomReset, displaced } = roomMemberContexts.dispatch(threadId, readyBot.id, instance.instanceId, cfg.context);
     if (roomReset) {
       store.appendMessage(threadId, {
@@ -10324,9 +10384,10 @@ async function runClaimedGroupMemberTurn(
     const roomSession = roomSessions.dispatch({
       threadId, botId: readyBot.id, claimId: internalGeneration, instance, guestConfined: roomGuestConfined, reset: Boolean(roomReset), hooks: Boolean(integrations.hooks),
       context: () => ({ ...roomMemberContexts.forThread(threadId)?.[readyBot.id], compactAt: nativeCompactTokens(instance) }),
-      config: [roomSystem.stable, cwd, readyBot.modelSelection, turnApprovalMode, roomToolScope, roomUserMcp, integrations],
+      config: [roomSystem.stable, cwd, preparedSelection, turnApprovalMode, roomToolScope, roomUserMcp, integrations],
       window: roomWindow, tail: roomTail, wrap: (body) => withTurnClock(clock, withRecalled(roomRecalled, attachmentsForBox(body, cwd) + roomShareNote.text + devsReports.note(threadId, Boolean(integrations.agents)))),
     });
+    runningTurnSelections.set(threadId, preparedSelection);
     guardTurnDispatch(roomShareNote.after(instance.adapter.sendTurn({
         ...roomSession.send,
         threadId,
@@ -10345,8 +10406,8 @@ async function runClaimedGroupMemberTurn(
         ...(integrations.browser && browserIsThePlace(roomPlan) ? { preloadBrowserTools: true } : {}),
         ...settingsTurnFields(cfg, DATA_DIR, managedPolicy.restrictsMcp()),
         botSettingsFile: botSettingsFile(readyBot),
-        ...(instance.instanceId === readyBot.modelSelection.instanceId
-          ? memberTurnSelection(readyBot.modelSelection)
+        ...(instance.instanceId === preparedSelection.instanceId
+          ? memberTurnSelection(preparedSelection)
           : { model: instance.models.default }),
       })), () => abandoned || Boolean(isCancelled?.()), async () => {
         // Stop may have landed before the adapter had a process to interrupt: interrupt again now.
@@ -10459,8 +10520,60 @@ async function runClaimedGroupMemberTurn(
     }
     return true;
   }
-  if (outcome === "provider_failed" || outcome === "parked") {
+  const stop = turnStops.read(threadId, completedProviderTurnId ?? providerTurnId);
+  const failedOnLimit = outcome === "provider_failed" || (outcome === "settled" && !turnCompletedOk && Boolean(stop?.flags?.limit));
+  if (failedOnLimit || outcome === "parked") {
     if (skillAuthoring) skillAuthoringClaim.claimed = false;
+    const limitScope = stop?.flags?.limit;
+    const root = orchestration?.coordination ? coordinator.node(orchestration.coordination.id) : undefined;
+    const expectedMessageId = orchestration?.requestMessageId ?? operation?.requestMessageId;
+    const latestUserId = [...store.activePath(threadId)].reverse().find((message) => message.role === "user" && message.kind === "text")?.id;
+    const userRoot = root
+      ? root.parentId === undefined && root.origin?.kind === "user"
+      : Boolean(operation?.requestMessageId);
+    const safeUserRetry = limitRetryCount === 0 && Boolean(limitScope) && quotaSwitchEnabled() && !limitRetryUnsafe &&
+      userRoot && !root?.goalRunId && !operation?.goalRun && !orchestration?.goalRunId &&
+      Boolean(expectedMessageId && expectedMessageId === latestUserId) &&
+      !operation?.cancelled && !isCancelled?.();
+    const backup = safeUserRetry && limitScope
+      ? limitTakeover.backups(bot.id, preparedSelection, limitScope, preparedApprovalMode)[0]
+      : undefined;
+    if (backup && !sameRoomModelSelection(backup, preparedSelection)) {
+      const takeover: RoomLimitTakeover = {
+        from: preparedSelection,
+        to: backup,
+        scope: limitScope!,
+        ...(stop?.flags?.limitResetsAt ? { resetsAt: stop.flags.limitResetsAt } : {}),
+      };
+      announceRoomLimitTakeover(store.bot(bot.id) ?? readyBot, threadId, takeover);
+      if (orchestration) {
+        orchestration.result.replyText = undefined;
+        orchestration.result.outcome = undefined;
+        orchestration.result.stopReason = undefined;
+      }
+      if (orchestration?.coordination) {
+        deferCoordinationSettle = true;
+        directCoordinationSettlers.delete(internalGeneration);
+      }
+      return await runGroupMemberTurn(
+        groupId,
+        threadId,
+        bot.id,
+        hop,
+        spoken,
+        cardContinuation,
+        onDispatchError,
+        isCancelled,
+        onProviderHandshakeStarted,
+        onProviderHandshakeSettled,
+        skillAuthoringClaim,
+        orchestration,
+        operation,
+        0,
+        { primary: primarySelection, selection: backup, takeover },
+        limitRetryCount + 1,
+      );
+    }
     return false;
   }
 
@@ -10592,7 +10705,9 @@ async function runClaimedGroupMemberTurn(
     // Covers every early return that never produces a provider terminal event.
     unregisterSetupStall();
     revokeInternalCapabilityGeneration(threadId, internalGeneration);
-    settleDirectCoordination(internalGeneration, { ok: roomOutcome === "settled", ...(roomOutcome === "stalled" || setupStallReason !== undefined ? { stalled: true } : {}),
+    if (runningTurnSelections.get(threadId) === preparedSelection) runningTurnSelections.delete(threadId);
+    if (deferCoordinationSettle) directCoordinationSettlers.delete(internalGeneration);
+    else settleDirectCoordination(internalGeneration, { ok: roomOutcome === "settled", ...(roomOutcome === "stalled" || setupStallReason !== undefined ? { stalled: true } : {}),
       text: roomOutcome === "settled" ? roomReply : orchestration?.result.stopReason || setupStallReason || roomFailure || roomReply || roomOutcome || "The turn did not run" });
     if (!retainRoomVmLease) releaseRoomVmLease();
     if (!providerDispatched && roomSpeaker && groupSpeakers.get(threadId) === roomSpeaker) {

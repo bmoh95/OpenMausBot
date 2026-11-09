@@ -129,6 +129,7 @@ beforeAll(async () => {
           FAKE_CLAUDE_REPLIES: JSON.stringify([
             "I am delegating the research.\n<openmaus-goal>{\"status\":\"continue\",\"next\":\"Busy specialist\",\"instruction\":\"Research the answer and report evidence\",\"detail\":\"Waiting for specialist research.\"}</openmaus-goal>",
             "The specialist's evidence resolves the goal.\n<openmaus-goal>{\"status\":\"completed\",\"detail\":\"Specialist research incorporated after their direct task finished.\"}</openmaus-goal>",
+            verificationReply,
           ]),
           FAKE_CLAUDE_REPLY_STATE: join(home, "busy-worker-lead-replies.txt"),
         },
@@ -159,6 +160,7 @@ beforeAll(async () => {
             "I am delegating this scheduled goal.\n<openmaus-goal>{\"status\":\"continue\",\"next\":\"Delayed worker\",\"instruction\":\"Finish the scheduled analysis\",\"detail\":\"Waiting for the delayed worker.\"}</openmaus-goal>",
             "This is unrelated direct work and should be stopped.",
             "The scheduled analysis is now complete.\n<openmaus-goal>{\"status\":\"completed\",\"detail\":\"Scheduled goal survived the coordinator's direct Stop.\"}</openmaus-goal>",
+            verificationReply,
           ]),
           FAKE_CLAUDE_REPLY_STATE: join(home, "stop-scoped-lead-replies.txt"),
         },
@@ -280,7 +282,7 @@ describe("goal-driven channel runs", () => {
       .toBe("Goal completed: Draft produced and independently verified.");
     expect(current.working).toBe(false);
     expect(current.messages.filter((message: { kind: string; role?: string }) => message.kind === "text" && message.role === "bot")
-      .map((message: { from?: { name?: string } }) => message.from?.name)).toEqual(["Lead", "Scout", "Lead", "Scout"]);
+      .map((message: { from?: { name?: string } }) => message.from?.name)).toEqual(["Lead", "Scout", "Lead", "Lead"]);
     expect(JSON.stringify(current.messages)).not.toContain("<openmaus-goal>");
   });
 
@@ -443,7 +445,7 @@ describe("goal-driven channel runs", () => {
         status: "completed",
         detail: "Specialist research incorporated after their direct task finished.",
         turnCount: 4,
-        speakers: ["Worker coordinator", "Busy specialist", "Worker coordinator", "Busy specialist"],
+        speakers: ["Worker coordinator", "Busy specialist", "Worker coordinator"],
         workerDirectBusy: false,
         directFinishedNaturally: true,
       });

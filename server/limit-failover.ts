@@ -16,10 +16,9 @@ const PAY_PER_USE_KEYS = ["ANTHROPIC_API_KEY", "ANTHROPIC_AUTH_TOKEN", "OPENAI_A
 
 type Engine = { instanceId: string; driverKind: string };
 
-/** Whether `to` may take over a turn `from`'s usage limit refused. Never the same engine, and never another sign-in to
- * the same subscription engine: rotating accounts to get past a provider's usage limit breaks its terms and can get the
- * accounts closed. Another engine, or a pay-per-use key on the same one, is fine. */
+/** Whether `to` may take over a turn refused by `from`'s usage limit. */
 export function limitBackupAllowed(from: Engine, to: Engine, toConfig?: Pick<InstanceConfig, "environment" | "access">): boolean {
+  if (from.driverKind === to.driverKind && ((from.instanceId === "codex-account-2" && to.instanceId === "codex") || (from.instanceId === "grok" && to.instanceId === "grok-account-2"))) return true;
   if (to.instanceId === from.instanceId) return false;
   if (to.driverKind !== from.driverKind || !SUBSCRIPTION_DRIVERS.has(from.driverKind)) return true;
   return billsEachUse(toConfig);

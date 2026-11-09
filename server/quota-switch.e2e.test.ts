@@ -89,7 +89,7 @@ async function withQuotaFixture(
     // What the other AI was sent: the fake Claude logs each prompt; the fake Codex keeps its calls in one dump.
     const sent = () => {
       if (options.otherSignInOnly) return jsonLines(backupFile);
-      try { return (JSON.parse(readFileSync(backupFile, "utf8")).calls as any[]).filter((call) => call.method === "turn/start"); } catch { return []; }
+      try { return (JSON.parse(readFileSync(backupFile, "utf8")).calls as any[]).filter((call) => call.method === "turn/start" || call.method === "turn/steer"); } catch { return []; }
     };
     await check({ api, control, respond, backupPrompts: sent, dataDir });
   } finally {
@@ -144,6 +144,45 @@ it("carries the request on with another AI by itself: the exact message once mor
     // One notice for this bot; the Chief, told of the incident, hears its own if its own turn meets the limit too.
     const notices = (await api("GET", "/api/notifications")).notifications.filter((entry: any) => entry.kind === "notice" && entry.botId === bot.id);
     expect(notices.map((entry: any) => entry.body)).toEqual([expect.stringMatching(/^Limited Claude reached its limit.*, so Out of quota is using Codex meanwhile\.$/)]);
+  });
+}, 240_000);
+
+it("takes a user group turn over after a limit, then starts later room turns directly on that backup", async () => {
+  await withQuotaFixture({}, async ({ api, control, backupPrompts }) => {
+    const { bot } = await control("new-bot", "--name", "Room limit takeover");
+    const threadId = bot.activeTaskId as string;
+    const created = (await api("GET", "/api/bots")).bots.find((entry: any) => entry.id === bot.id);
+    const primary = { ...created.modelSelection, instanceId: "claude" };
+    await api("PATCH", `/api/bots/${bot.id}/tasks/${threadId}`, { modelSelection: primary, updateBotDefault: true });
+    const instances = (await api("GET", "/api/instances")).instances as any[];
+    const codex = instances.find((entry) => entry.instanceId === "codex");
+    await api("PATCH", `/api/bots/${bot.id}`, { fallback: [{ instanceId: "codex", model: codex.models.default }] });
+    const { group } = await api("POST", "/api/groups", {
+      name: "Quota test room", memberIds: [bot.id],
+      setup: { bulletin: "", defaultResponder: { kind: "member", botId: bot.id } },
+    });
+
+    const first = "GROUP_LIMIT_RETRY_ONCE_8F";
+    await api("POST", `/api/groups/${group.id}/messages`, { text: first, threadId: group.threadId });
+    expect((await control("wait", "--channel", group.id, "--timeout", "30")).status).toBe("settled");
+    const messages = async () => (await api("GET", `/api/threads/${group.threadId}/messages?limit=100`)).messages as any[];
+    await expect.poll(async () => (await messages()).findLast((message) => message.role === "bot" && message.kind === "text")?.text, { timeout: 30_000 })
+      .toBe("done from fake codex");
+    expect(backupPrompts()).toHaveLength(1);
+    expect(JSON.stringify(backupPrompts()[0])).toContain(first);
+    expect((await messages()).filter((message) => message.role === "user" && message.text === first)).toHaveLength(1);
+    expect((await messages()).filter((message) => message.tool?.name === "recovery: Limited Claude hit its limit, so Codex took over.")).toHaveLength(1);
+
+    const second = "GROUP_LIMIT_NEXT_TURN_2C";
+    await api("POST", `/api/groups/${group.id}/messages`, { text: second, threadId: group.threadId });
+    expect((await control("wait", "--channel", group.id, "--timeout", "30")).status).toBe("settled");
+    const after = await messages();
+    const secondUser = after.findLast((message) => message.role === "user" && message.text === second);
+    expect(secondUser).toBeDefined();
+    expect(after.some((message) => message.role === "bot" && message.kind === "text" && message.at > secondUser.at && message.text === "done from fake codex")).toBe(true);
+    expect(after.filter((message) => message.tool?.name?.startsWith("error:") && message.tool.name.includes("usage limit"))).toHaveLength(1);
+    expect(after.filter((message) => message.tool?.name === "recovery: Limited Claude hit its limit, so Codex took over.")).toHaveLength(1);
+    expect((await api("GET", "/api/bots")).bots.find((entry: any) => entry.id === bot.id).modelSelection).toEqual(primary);
   });
 }, 240_000);
 

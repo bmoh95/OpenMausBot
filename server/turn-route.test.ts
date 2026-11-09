@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { classifyTurn, fastModelFor, routeDirectTurn, routeTurn, type RouteInput } from "./turn-route.ts";
 import type { ModelCatalog } from "./contracts.ts";
@@ -125,9 +125,17 @@ describe("long conversations", () => {
 });
 
 describe("routeDirectTurn", () => {
+  beforeEach(() => vi.stubEnv("OMB_ADAPTIVE_TURN_ROUTING", "1"));
+  afterEach(() => vi.unstubAllEnvs());
   const bot = { replyStyle: "conversational" as const, modelSelection: { instanceId: "claude", model: "claude-opus-5" } };
   const instance = { models: claude, adapter: { capabilities: { effortLevels: ["low", "high"] as const } } };
   const message = { text: "and the other one?", images: [] };
+
+  it("preserves the selected model and effort unless adaptive routing is explicitly enabled", () => {
+    vi.stubEnv("OMB_ADAPTIVE_TURN_ROUTING", "");
+    const configured = { ...bot, modelSelection: { ...bot.modelSelection, effort: "high" as const } };
+    expect(routeDirectTurn(configured, {}, [], message, instance, false)).toEqual({ tier: null, model: "claude-opus-5", effort: "high", variant: undefined });
+  });
 
   it("reads tool use after the last ask from the thread", () => {
     const quiet = [{ role: "user", kind: "text" }, { role: "bot", kind: "text" }];

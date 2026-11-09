@@ -100,7 +100,7 @@ export function routeDirectTurn(
 ): RouteResult {
   const lastAsk = path.findLastIndex((m) => m.role === "user" && m.kind === "text");
   return routeTurn({
-    conversational: isConversational(bot.replyStyle),
+    conversational: process.env.OMB_ADAPTIVE_TURN_ROUTING === "1" && isConversational(bot.replyStyle),
     followsBotModel: task.modelSelection === undefined,
     automated,
     signals: {

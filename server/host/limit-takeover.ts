@@ -244,12 +244,12 @@ export function createLimitTakeover(deps: LimitTakeoverDeps) {
     /** Before a turn on `selection`: what holds that AI, when another AI can take the turn instead, so it starts there
      * with no refused turn first. Null when nothing holds it, or when nothing could carry on and the AI is tried as
      * usual. `recovering`: Automatic recovery has backups of its own for a limit. */
-    heldAtStart(bot: ThreadBot, selection: ModelSelection, recovering = false): { scope: TakeoverScope; resetsAt?: number } | null {
+    heldAtStart(bot: ThreadBot, selection: ModelSelection, recovering = false, approval?: ApprovalMode): { scope: TakeoverScope; resetsAt?: number } | null {
       const engineUntil = deps.blockedUntil(selection.instanceId);
       const model = engineUntil === null ? modelHeld(selection) : null;
       const scope: TakeoverScope | null = engineUntil !== null ? "engine" : model ? model.scope : signedOutHeld(selection.instanceId) ? "signed-out" : null;
       if (!scope) return null;
-      const carries = (deps.enabled?.() ?? true) && backups(bot.id, selection, scope, approvalModeFor(bot)).length > 0;
+      const carries = (deps.enabled?.() ?? true) && backups(bot.id, selection, scope, approval ?? approvalModeFor(bot)).length > 0;
       if (!carries && !(recovering && scope !== "signed-out")) return null;
       const resetsAt = scope === "engine" ? deps.resetAt?.(selection.instanceId) ?? undefined : model?.resetsAt;
       return { scope, ...(resetsAt && resetsAt > now() ? { resetsAt } : {}) };

@@ -140,7 +140,7 @@ function goalRun(options: { solo?: boolean; members?: Array<{ id: string; name: 
       const scripted = options.steps[Math.min(calls.length - 1, options.steps.length - 1)]!;
       const result = typeof scripted === "function" ? scripted(calls.length) : scripted;
       if (result.ran) run.turnCount += 1;
-      if (options.cancelAfter === calls.length || calls.length > 4 * GROUP_GOAL_MAX_TURNS) cancelled = true;
+      if (options.cancelAfter === calls.length || calls.length > 6 * GROUP_GOAL_MAX_TURNS) cancelled = true;
       return result;
     },
     finish: (status, detail) => {
@@ -154,22 +154,45 @@ function goalRun(options: { solo?: boolean; members?: Array<{ id: string; name: 
 }
 
 describe("one goal-run loop for a room and a one-on-one chat", () => {
+  it("reviews an initial blocker and permits a different next step", async () => {
+    const goal = goalRun({ solo: true, steps: [
+      settled(envelope({ status: "blocked", detail: "Missing result" })),
+      settled(envelope({ status: "continue", next: "solo-id", instruction: "Inspect logs", detail: "Checking" })),
+      settled(envelope({ status: "completed", detail: "Result obtained" })),
+      settled("VERDICT: PASS\nEVIDENCE: Inspected the result file."),
+    ] });
+    await goal.done;
+    expect(goal.finished[0]?.status).toBe("completed");
+    expect(goal.calls[1]?.instructions).toContain("Blocked review 1 of 2");
+  });
+
+  it("does not mark completion when verification fails", async () => {
+    const goal = goalRun({ solo: true, steps: [
+      settled(envelope({ status: "completed", detail: "Claimed done" })),
+      settled("VERDICT: FAIL\nEVIDENCE: Missing result file."),
+      settled(envelope({ status: "needs-input", detail: "Need access" })),
+    ] });
+    await goal.done;
+    expect(goal.finished[0]?.status).toBe("needs-input");
+    expect(goal.calls[2]?.instructions).toContain("verification did not pass");
+  });
   it("in a room of one the bot works in its own turns and finishes on the done marker", async () => {
     const goal = goalRun({
       solo: true,
       steps: [
         settled(envelope({ status: "continue", next: "solo-id", instruction: "Fix the failing parser test", detail: "Half done" })),
         settled(envelope({ status: "completed", detail: "Every test passes." })),
+        settled("VERDICT: PASS\nEVIDENCE: Ran parser tests successfully."),
       ],
     });
     await goal.done;
-    expect(goal.calls.map((call) => [call.bot, call.coordinator])).toEqual([["solo-id", true], ["solo-id", true]]);
+    expect(goal.calls.map((call) => [call.bot, call.coordinator])).toEqual([["solo-id", true], ["solo-id", true], ["solo-id", false]]);
     expect(goal.calls[0]!.instructions).toContain("You are working alone toward a bounded goal.");
     expect(goal.calls[0]!.instructions).toContain(`"next":"solo-id"`);
     expect(goal.calls[0]!.instructions).not.toContain("Available room members");
     expect(goal.calls[1]!.instructions).toContain("Harness note: Your next step: Fix the failing parser test");
     expect(goal.finished).toEqual([{ status: "completed", detail: "Every test passes." }]);
-    expect(goal.run.turnCount).toBe(2);
+    expect(goal.run.turnCount).toBe(3);
   });
 
   it("stops a room of one at the same turn cap as a room", async () => {
@@ -178,8 +201,8 @@ describe("one goal-run loop for a room and a one-on-one chat", () => {
       steps: [(call) => settled(envelope({ status: "continue", next: "Solo", instruction: `Try approach ${call}`, detail: "Still going" }))],
     });
     await goal.done;
-    expect(goal.calls).toHaveLength(GROUP_GOAL_MAX_TURNS);
-    expect(goal.finished).toEqual([{ status: "limit-reached", detail: expect.stringContaining(`${GROUP_GOAL_MAX_TURNS}-turn safety limit`) }]);
+    expect(goal.calls).toHaveLength(GROUP_GOAL_MAX_TURNS * 5);
+    expect(goal.finished).toEqual([{ status: "limit-reached", detail: expect.stringContaining(`${GROUP_GOAL_MAX_TURNS * 5}-turn safety limit`) }]);
   });
 
   it("blocks on the spend cap without retrying the refused turn", async () => {
@@ -206,7 +229,7 @@ describe("one goal-run loop for a room and a one-on-one chat", () => {
   it("never takes a reply without a valid marker as done", async () => {
     const goal = goalRun({ solo: true, steps: [settled("All done, trust me.")] });
     await goal.done;
-    expect(goal.calls).toHaveLength(1);
+    expect(goal.calls).toHaveLength(3);
     expect(goal.finished).toEqual([{ status: "blocked", detail: "Solo did not provide a valid next-step decision." }]);
   });
 
@@ -235,10 +258,11 @@ describe("one goal-run loop for a room and a one-on-one chat", () => {
         settled(envelope({ status: "continue", next: "Scout", instruction: "Verify the draft", detail: "Drafted" })),
         settled("Verified."),
         settled(envelope({ status: "completed", detail: "Draft verified." })),
+        settled("VERDICT: PASS\nEVIDENCE: Checked the draft and its source."),
       ],
     });
     await goal.done;
-    expect(goal.calls.map((call) => [call.bot, call.coordinator])).toEqual([["lead-id", true], ["scout-id", false], ["lead-id", true]]);
+    expect(goal.calls.map((call) => [call.bot, call.coordinator])).toEqual([["lead-id", true], ["scout-id", false], ["lead-id", true], ["lead-id", false]]);
     expect(goal.calls[0]!.instructions).toContain("Available room members: Lead (lead-id), Scout (scout-id).");
     expect(goal.finished).toEqual([{ status: "completed", detail: "Draft verified." }]);
   });

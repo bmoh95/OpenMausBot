@@ -276,7 +276,7 @@ export function createRoomSessions(deps: RoomSessionsDeps): RoomSessions {
     speakers.set(instance.instanceId, { botId, at });
 
     const idleMs = roomSessionIdleMs(instance.driverKind);
-    if (idleMs === undefined || instance.adapter.capabilities.strictResume !== true || !input.hooks || input.guestConfined) {
+    if (idleMs === undefined || instance.adapter.capabilities.strictResume !== true || (!input.hooks && instance.driverKind !== "codex") || input.guestConfined) {
       drop(threadId, botId);
       const untracked = traces.get(threadId)?.get(botId);
       if (untracked) untracked.ended = undefined;
@@ -286,7 +286,11 @@ export function createRoomSessions(deps: RoomSessionsDeps): RoomSessions {
     const context = () => (asked ??= { reading: input.context?.() }).reading;
     if (contextFell(traces.get(threadId)?.get(botId), context)) drop(threadId, botId);
 
-    const config = createHash("sha256").update(JSON.stringify(input.config)).digest("hex");
+    // Turn-scoped proxy credentials rotate on every send. They must still be delivered to the
+    // driver, but are not a change in model, permissions, tool selection, or standing instructions.
+    const config = createHash("sha256").update(JSON.stringify(input.config, (key, value) =>
+      instance.driverKind === "codex" && /^(OMB_COMMS_TOKEN|OMB_CONTROL_TOKEN|OMB_MCP_TOKEN(?:_.*)?)$/.test(key)
+        ? "[turn-scoped capability]" : value)).digest("hex");
     const { order } = window;
     const ids = window.lines.map((line) => line.id);
     const first = ids.length ? order.indexOf(ids[0]!) : order.length;

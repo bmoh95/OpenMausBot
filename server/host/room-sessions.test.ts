@@ -131,10 +131,10 @@ describe("Codex room continuity", () => {
     const r = room();
     const codex = engine("codex-account-2", "codex");
     r.say("Diagnose the plugin connection and continue until fixed.");
-    const first = r.run("editor", "codex-native-1", { reply: "Inspected the manifest; next check the socket." }, { instance: codex });
+    const first = r.run("editor", "codex-native-1", { reply: "Inspected the manifest; next check the socket." }, { instance: codex, hooks: false, config: ["stable", { agents: { env: { OMB_COMMS_TOKEN: "turn-one", OMB_TURN_DEPTH: "0" } } }] });
     expect(first.result.mode).toBe("start");
     r.say("Continue and verify the fix.");
-    const next = r.dispatch("editor", { instance: codex });
+    const next = r.dispatch("editor", { instance: codex, hooks: false, config: ["stable", { agents: { env: { OMB_COMMS_TOKEN: "turn-two", OMB_TURN_DEPTH: "0" } } }] });
     expect(next.result.mode).toBe("resume");
     expect(next.result.send.resumeCursor).toBe("codex-native-1");
     expect(next.result.text).toContain("Continue and verify the fix.");

@@ -89,6 +89,7 @@ beforeAll(async () => {
     config: { cli: FAKE_CLAUDE },
   });
   writeFileSync(join(data, "config.json"), JSON.stringify({
+    newBotDefaults: { profile: { computer: "off", browser: false } },
     instances: {
       done: fixture("done", {
         FAKE_CLAUDE_MODE: "happy",

@@ -13791,7 +13791,10 @@ describe("bot memory API", () => {
         modelSelection: { instanceId: "claude", model: "claude-sonnet-5" },
       })).status).toBe(200);
       const withComputer = await api("GET", `/api/bots/${bot.id}/system-prompt`);
-      expect(withComputer.body.sections.find((section: { id: string }) => section.id === "plan").text).toContain("Local VM is an isolated desktop");
+      const surface = withComputer.body.sections.find((section: { id: string }) => section.id === "plan").text;
+      expect(surface).toContain("Local VM is an isolated desktop");
+      expect(surface).toContain("the failure does not revoke the user's authorization, so do not ask again");
+      expect(surface).not.toContain("ask before doing the task on a screen instead");
       const computerSection = withComputer.body.sections.find((section: { id: string }) => section.id === "computer");
       expect(computerSection.text).toContain(SIGN_IN_PROMPT);
       expect(computerSection.text).not.toMatch(/never type their (?:credentials|password)/i);

@@ -781,6 +781,7 @@ export function containerRunArgs(
     throw new Error("Per-bot Local VMs require Docker or Podman because Apple container requires a fixed host port");
   }
   const common = ["run", "-d", "--name", target.containerName];
+  if (runtime === "docker") common.push("--group-add", "26000");
   if (runtime === "podman") {
     // The supervisor starts as namespace-root then drops to cua (1000); keep-id preserves the host workspace owner instead of :U chown.
     common.push("--userns", "keep-id:uid=1000,gid=1000", "--user", "0:0");
@@ -840,9 +841,9 @@ export function containerRunArgs(
 }
 
 async function ensureVmWorkspace(platform: NodeJS.Platform, target: LocalVmTarget, runtime: Runtime): Promise<void> {
-  await mkdir(target.workspaceDir, { recursive: true, mode: 0o700 });
+  await mkdir(target.workspaceDir, { recursive: true, mode: 0o770 });
   if (platform === "win32") return;
-  await chmod(target.workspaceDir, 0o700);
+  await chmod(target.workspaceDir, 0o770);
   const host = currentHostUser(platform);
   if (host?.uid !== 0 || !desktopRootIsHostRoot(runtime, platform, host)) return;
   // -h: a link the bot left in its workspace must never hand a host file to uid 1000.

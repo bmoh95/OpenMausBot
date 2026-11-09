@@ -13778,11 +13778,14 @@ describe("bot memory API", () => {
       expect(before.body.approxTokens).toBe(Math.ceil(before.body.totalBytes / 4));
       expect(typeof before.body.note).toBe("string");
 
-      await api("PATCH", `/api/bots/${bot.id}`, { soul: "Never file noise." });
+      await api("PATCH", `/api/bots/${bot.id}`, { soul: "Never file noise.", replyStyle: "conversational" });
       const after = await api("GET", `/api/bots/${bot.id}/system-prompt`);
-      expect(after.body.sections[1].id).toBe("soul");
-      expect(after.body.sections[1].text).toContain("Never file noise.");
-      expect(after.body.sections[1].bytes).toBe(Buffer.byteLength(after.body.sections[1].text, "utf8"));
+      expect(after.body.sections[1].id).toBe("reply-style");
+      expect(after.body.sections[1].text).toContain("complete, well-structured answer");
+      expect(after.body.sections[2].id).toBe("soul");
+      expect(after.body.sections[2].text).toContain("Never file noise.");
+      expect(after.body.sections[2].text).toContain("rank above OpenMausBot's default Reply Style and reply-habit guidance");
+      expect(after.body.sections[2].bytes).toBe(Buffer.byteLength(after.body.sections[2].text, "utf8"));
       expect((await api("PATCH", `/api/bots/${bot.id}`, {
         computer: "vm",
         modelSelection: { instanceId: "claude", model: "claude-sonnet-5" },

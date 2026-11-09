@@ -50,11 +50,27 @@ const newBot = async (name: string, instanceId: string) => (await api("POST", "/
 
 const messagesIn = async (threadId: string): Promise<any[]> =>
   (await api("GET", `/api/threads/${encodeURIComponent(threadId)}/messages?limit=100`)).body.messages;
-const cardIn = async (threadId: string) => (await messagesIn(threadId)).find((message) => message.kind === "goal.run")?.goalRun;
+const goalCardIds = new Map<string, string>();
+const goalAnchors = new Map<string, string>();
+const cardIn = async (threadId: string) => {
+  const id = goalCardIds.get(threadId);
+  const anchor = goalAnchors.get(threadId);
+  const messages = id
+    ? (await api("GET", `/api/threads/${encodeURIComponent(threadId)}/messages?around=${id}&limit=1`)).body.messages
+    : anchor
+      ? (await api("GET", `/api/threads/${encodeURIComponent(threadId)}/messages?around=${anchor}&limit=3`)).body.messages
+      : await messagesIn(threadId);
+  const card = messages.find((message: any) => message.kind === "goal.run");
+  if (card) goalCardIds.set(threadId, card.id);
+  return card?.goalRun;
+};
 const busy = async (botId: string) =>
   (await api("GET", "/api/bots?messages=0")).body.bots.find((bot: { id: string }) => bot.id === botId)?.busy;
-const sendGoal = (bot: { id: string; threadId: string }, text: string, extra: Record<string, unknown> = {}) =>
-  api("POST", `/api/bots/${bot.id}/messages`, { text, mode: "goal", threadId: bot.threadId, ...extra });
+const sendGoal = async (bot: { id: string; threadId: string }, text: string, extra: Record<string, unknown> = {}) => {
+  const response = await api("POST", `/api/bots/${bot.id}/messages`, { text, mode: "goal", threadId: bot.threadId, ...extra });
+  if (response.status === 202) goalAnchors.set(bot.threadId, response.body.message.id);
+  return response;
+};
 
 beforeAll(async () => {
   home = mkdtempSync(join(tmpdir(), "omb-one-on-one-goal-"));

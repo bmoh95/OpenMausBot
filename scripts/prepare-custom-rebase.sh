@@ -25,8 +25,8 @@ worktree=${3:-$(dirname "$repo")/openmausbot-rebase-$version-$stamp}
 git check-ref-format --branch "$branch" >/dev/null
 if [[ -e "$worktree" ]]; then echo "Path already exists: $worktree" >&2; exit 2; fi
 for remote in origin upstream; do git -C "$repo" remote get-url "$remote" >/dev/null; done
-git -C "$repo" fetch upstream --tags
-git -C "$repo" fetch origin refs/heads/custom/production:refs/remotes/origin/custom/production
+git -C "$repo" fetch --no-tags upstream "refs/tags/$version:refs/tags/$version"
+git -C "$repo" fetch --no-tags origin refs/heads/custom/production:refs/remotes/origin/custom/production
 source_ref=refs/remotes/origin/custom/production
 oldbase=$(git -C "$repo" show "$source_ref:deploy/custom-fork/upstream-base")
 git -C "$repo" rev-parse --verify "refs/tags/$version^{commit}" >/dev/null

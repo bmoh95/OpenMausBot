@@ -16,6 +16,8 @@ const ROOT = join(SERVER_DIR, "..");
 const FAKE_CLAUDE = join(SERVER_DIR, "testing", "fake-claude-cli.ts");
 const envelope = (decision: Record<string, string>) => `<openmaus-goal>${JSON.stringify(decision)}</openmaus-goal>`;
 
+const verificationReply = "VERDICT: PASS\nEVIDENCE: Fixture confirmed the requested result.";
+
 let child: ChildProcess;
 let home = "";
 let base = "";
@@ -77,11 +79,12 @@ beforeAll(async () => {
         FAKE_CLAUDE_REPLIES: JSON.stringify([
           `I fixed the parser test.\n${envelope({ status: "continue", next: "Solo", instruction: "Fix the last failing test", detail: "One test left" })}`,
           `Every test passes now.\n${envelope({ status: "completed", detail: "All tests pass." })}`,
+          verificationReply,
         ]),
       }),
       loop: fixture("loop", {
         FAKE_CLAUDE_MODE: "happy",
-        FAKE_CLAUDE_REPLIES: JSON.stringify(Array.from({ length: 14 }, (_, index) =>
+        FAKE_CLAUDE_REPLIES: JSON.stringify(Array.from({ length: 66 }, (_, index) =>
           `Not there yet.\n${envelope({ status: "continue", next: "Looper", instruction: `Try approach ${index + 1}`, detail: "Still working" })}`)),
       }),
       slow: fixture("slow", {
@@ -95,7 +98,7 @@ beforeAll(async () => {
       crash: fixture("crash", { FAKE_CLAUDE_MODE: "exit-early" }),
       routine: fixture("routine", {
         FAKE_CLAUDE_MODE: "happy",
-        FAKE_CLAUDE_REPLIES: JSON.stringify([`Reviewed.\n${envelope({ status: "completed", detail: "Scheduled review done." })}`]),
+        FAKE_CLAUDE_REPLIES: JSON.stringify([`Reviewed.\n${envelope({ status: "completed", detail: "Scheduled review done." })}`, verificationReply]),
       }),
     },
   }));
@@ -141,14 +144,15 @@ describe("one-on-one goal runs (a room of one)", () => {
     await expect.poll(() => cardIn(bot.threadId), { timeout: hostTimeout(15_000) }).toMatchObject({
       status: "completed",
       coordinatorBotId: bot.id,
-      turnCount: 2,
+      turnCount: 3,
       maxTurns: 13,
       detail: "All tests pass.",
     });
     await expect.poll(() => busy(bot.id)).toBe(false);
 
     const sentPrompts = prompts("done");
-    expect(sentPrompts).toHaveLength(2);
+    expect(sentPrompts).toHaveLength(3);
+    expect(sentPrompts[2]).toContain("Verify the original goal independently");
     expect(sentPrompts[0]).toContain("You are working alone toward a bounded goal.");
     expect(sentPrompts[0]).toContain("Get every test passing");
     expect(sentPrompts[1]).toContain("Your next step: Fix the last failing test");
@@ -157,7 +161,7 @@ describe("one-on-one goal runs (a room of one)", () => {
     const afterGoal = messages.slice(messages.findIndex((message) => message.id === sent.body.message.id) + 1);
     expect(JSON.stringify(messages)).not.toContain("openmaus-goal");
     expect(afterGoal.filter((message) => message.kind === "text" && message.role === "bot").map((message) => message.text))
-      .toEqual(["I fixed the parser test.", "Every test passes now."]);
+      .toEqual(["I fixed the parser test.", "Every test passes now.", verificationReply]);
     expect(messages.filter((message) => message.role === "user").map((message) => message.text)).toEqual(["Get every test passing"]);
 
     const retried = await sendGoal(bot, "Get every test passing", { sendId: "one_on_one_goal_send_1" });
@@ -197,19 +201,19 @@ describe("one-on-one goal runs (a room of one)", () => {
       detailParams: { name: "Patient" },
     });
     writeFileSync(patientGate, "observed the waiting goal");
-    // The fixture's goal turn ends without a marker, so the run stops after exactly the one turn it waited for.
+    // A reply without the private decision marker is retried twice before it is classified as blocked.
     await expect.poll(() => cardIn(bot.threadId), { timeout: hostTimeout(15_000) })
-      .toMatchObject({ status: "blocked", turnCount: 1, detail: "Patient did not provide a valid next-step decision." });
+      .toMatchObject({ status: "blocked", turnCount: 3, detail: "Patient did not provide a valid next-step decision." });
     expect((await messagesIn(bot.threadId)).filter((message) => message.kind === "goal.run")).toHaveLength(1);
   });
 
   it("stops at the same turn cap as a room goal", async () => {
     const bot = await newBot("Looper", "loop");
     expect((await sendGoal(bot, "Keep trying forever")).status).toBe(202);
-    await expect.poll(() => cardIn(bot.threadId), { timeout: hostTimeout(30_000) })
-      .toMatchObject({ status: "limit-reached", turnCount: 13, maxTurns: 13 });
-    expect(prompts("loop")).toHaveLength(13);
-  });
+    await expect.poll(() => cardIn(bot.threadId), { timeout: hostTimeout(120_000) })
+      .toMatchObject({ status: "limit-reached", turnCount: 65, maxTurns: 65 });
+    expect(prompts("loop")).toHaveLength(65);
+  }, 150_000);
 
   it("never treats a failed turn as done: it is retried once, then the goal fails", async () => {
     const bot = await newBot("Crasher", "crash");

@@ -154,6 +154,17 @@ function goalRun(options: { solo?: boolean; members?: Array<{ id: string; name: 
 }
 
 describe("one goal-run loop for a room and a one-on-one chat", () => {
+  it("requires a separate read-only verification turn when a channel has one member", async () => {
+    const goal = goalRun({ steps: [
+      settled(envelope({ status: "completed", detail: "Artifact ready." })),
+      settled("VERDICT: PASS\nEVIDENCE: Inspected the requested artifact."),
+    ] });
+    await goal.done;
+    expect(goal.calls.map(call => [call.bot, call.coordinator])).toEqual([["solo-id", true], ["solo-id", false]]);
+    expect(goal.calls[1]!.instructions).toContain("Read-only verification only");
+    expect(goal.finished).toEqual([{ status: "completed", detail: "Artifact ready." }]);
+  });
+
   it("reviews an initial blocker and permits a different next step", async () => {
     const goal = goalRun({ solo: true, steps: [
       settled(envelope({ status: "blocked", detail: "Missing result" })),

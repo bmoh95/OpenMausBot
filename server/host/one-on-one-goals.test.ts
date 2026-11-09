@@ -42,6 +42,7 @@ function goalChat(startTurn: (call: number, lead: GoalLeadTurn, settle: (outcome
   createOneOnOneGoals({
     store: {
       bot: () => ({ id: "b", name: "Solo" } as BotRecord),
+      messagesFor: () => [{ id: "receipt", turnId: "fixture", kind: "activity", tool: { itemId: "tool", name: "Bash", ok: true, output: "checked" } } as Message],
       taskByThread: () => ({} as TaskRecord),
       appendMessage: () => ({ id: "m1" } as Message),
       onChange: (listener) => { botChanged = listener as typeof botChanged; return () => {}; },
@@ -67,7 +68,16 @@ function goalChat(startTurn: (call: number, lead: GoalLeadTurn, settle: (outcome
     },
     canStart,
     isUnattended: () => false,
-    startTurn: (_botId, _text, opts) => startTurn(++starts, lead, opts.onSettled),
+    startTurn: (_botId, _text, opts) => {
+      lead.turnId = "fixture";
+      if (_text.includes("Verify the original goal independently")) {
+        starts++;
+        lead.assistantItems.push("VERDICT: PASS\nEVIDENCE: Fixture checked the result.");
+        opts.onSettled({ ok: true, text: "" });
+        return Promise.resolve();
+      }
+      return startTurn(++starts, lead, opts.onSettled);
+    },
   }).start("b", "t", "Fix the build");
   // The store's change event for the bot, as the real store fires it when the bot's turn ends.
   return { run, finished, ends, starts: () => starts, botChanged: () => botChanged?.({ type: "bot", botId: "b" }) };
@@ -116,8 +126,8 @@ describe("a one-on-one goal whose turn keeps losing its slot", () => {
     busy = false;
     chat.botChanged();
     await vi.advanceTimersByTimeAsync(1_000);
-    expect(chat.starts()).toBe(2);
-    expect(chat.run.turnCount).toBe(1);
+    expect(chat.starts()).toBe(3);
+    expect(chat.run.turnCount).toBe(2);
     expect(chat.finished).toEqual([{ status: "completed", detail: "Done." }]);
   });
 
@@ -129,8 +139,8 @@ describe("a one-on-one goal whose turn keeps losing its slot", () => {
       settle({ ok: true, text: "" });
     });
     await vi.advanceTimersByTimeAsync(1_000);
-    expect(chat.starts()).toBe(2);
-    expect(chat.run.turnCount).toBe(1);
+    expect(chat.starts()).toBe(3);
+    expect(chat.run.turnCount).toBe(2);
     expect(chat.finished).toEqual([{ status: "completed", detail: "Done." }]);
   });
 });

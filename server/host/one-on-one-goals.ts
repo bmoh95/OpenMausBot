@@ -1,3 +1,4 @@
+import { goalEvidence } from "../goal-evidence.ts";
 import type { ServerText } from "../../shared/server-text.ts";
 import { noticeFailure } from "../chat-notices.ts";
 import { userErrorThrown } from "../user-errors.ts";
@@ -13,7 +14,7 @@ import type { GoalCards, LiveGoalRun } from "./goal-cards.ts";
 import type { GoalTurns } from "./goal-turns.ts";
 
 export interface OneOnOneGoalDeps {
-  store: Pick<Store, "appendMessage" | "bot" | "onChange" | "taskByThread" | "titleTaskFromFirstMessage">;
+  store: Pick<Store, "appendMessage" | "messagesFor" | "bot" | "onChange" | "taskByThread" | "titleTaskFromFirstMessage">;
   cards: GoalCards;
   turns: GoalTurns;
   /** startTurn would admit a turn in this conversation now. */
@@ -155,6 +156,7 @@ export function createOneOnOneGoals(deps: OneOnOneGoalDeps) {
         return {
           ran: true,
           replyText: result.ok ? lead.assistantItems.join("\n") : "",
+          evidence: goalEvidence(store.messagesFor(threadId), lead.turnId),
           outcome,
           ...(result.ok ? {} : { stopReason: result.text }),
         };

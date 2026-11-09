@@ -75,6 +75,7 @@ beforeAll(async () => {
         displayName: "Completing fixture",
         environment: {
           FAKE_CLAUDE_MODE: "happy",
+        FAKE_CLAUDE_TOOL_CALLS: JSON.stringify([{ name: "Bash", input: { command: "true" }, ok: true, output: "verified fixture" }]),
           FAKE_CLAUDE_REPLIES: JSON.stringify(completeReplies),
           FAKE_CLAUDE_REPLY_STATE: join(home, "complete-replies.txt"),
         },
@@ -85,6 +86,7 @@ beforeAll(async () => {
         displayName: "Looping fixture",
         environment: {
           FAKE_CLAUDE_MODE: "happy",
+        FAKE_CLAUDE_TOOL_CALLS: JSON.stringify([{ name: "Bash", input: { command: "true" }, ok: true, output: "verified fixture" }]),
           FAKE_CLAUDE_REPLIES: JSON.stringify(loopReplies),
           FAKE_CLAUDE_REPLY_STATE: join(home, "loop-replies.txt"),
         },
@@ -127,6 +129,7 @@ beforeAll(async () => {
         displayName: "Busy worker lead fixture",
         environment: {
           FAKE_CLAUDE_MODE: "happy",
+        FAKE_CLAUDE_TOOL_CALLS: JSON.stringify([{ name: "Bash", input: { command: "true" }, ok: true, output: "verified fixture" }]),
           FAKE_CLAUDE_REPLIES: JSON.stringify([
             "I am delegating the research.\n<openmaus-goal>{\"status\":\"continue\",\"next\":\"Busy specialist\",\"instruction\":\"Research the answer and report evidence\",\"detail\":\"Waiting for specialist research.\"}</openmaus-goal>",
             "The specialist's evidence resolves the goal.\n<openmaus-goal>{\"status\":\"completed\",\"detail\":\"Specialist research incorporated after their direct task finished.\"}</openmaus-goal>",

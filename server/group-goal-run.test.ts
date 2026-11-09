@@ -118,7 +118,7 @@ describe("groupGoalCoordinatorInstructions harness note", () => {
 
 const envelope = (decision: Record<string, string>) =>
   `Update.\n${GROUP_GOAL_CONTROL_OPEN}${JSON.stringify(decision)}${GROUP_GOAL_CONTROL_CLOSE}`;
-const settled = (replyText: string): GoalStepResult => ({ ran: true, replyText, outcome: "settled" });
+const settled = (replyText: string): GoalStepResult => ({ ran: true, replyText, outcome: "settled", evidence: [{ id: "fixture", tool: "Bash", ok: true, output: "checked result" }] });
 
 /** Drives the real loop with scripted steps; a step that runs counts one turn, as a claimed member turn does. */
 function goalRun(options: { solo?: boolean; members?: Array<{ id: string; name: string }>; steps: Array<GoalStepResult | ((call: number) => GoalStepResult)>; cancelAfter?: number }) {

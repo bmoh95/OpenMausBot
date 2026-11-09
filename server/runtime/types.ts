@@ -1,5 +1,6 @@
 // The job runtime's public types: one record for every hand-off between bots, one lifecycle, one wake lane.
 import type { ApprovalMode } from "../../shared/approval-mode.ts";
+import type { WorkCheckpoint } from "../work-checkpoint.ts";
 
 /** Where the work ultimately started. Immutable down the whole tree. */
 export type OriginKind = "person" | "routine" | "outside";
@@ -142,6 +143,8 @@ export interface Assignment {
   /** The next execution continues the last one in place: after a step cap,
    * or a wait the host could not hold (a computer seat). Cleared at dispatch. */
   continuation?: { note: string; handoffPath?: string; count: number };
+  /** Explicit progress across executions; a working checkpoint prevents a successful model turn from silently completing the task. */
+  work?: WorkCheckpoint;
   /** While a node continues in place, for the loop guard: `stale` counts consecutive continuations
    * with no successful tool call; `errors` holds the last three tool error texts. */
   guard?: { stale: number; errors: string[] };

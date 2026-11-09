@@ -436,7 +436,7 @@ describe("placeUnavailable", () => {
 });
 
 describe("a connected app before any screen", () => {
-  const RULE = "When a connected app can do the task, use it before any browser or screen. If that app is refused or fails, say so in one plain line with what fixes it (connecting it, or who can), and ask before doing the task on a screen instead.";
+  const RULE = "When a connected app can do the task, use it before any browser or screen. If the app is unavailable or errors, continue with the mounted browser or screen when it can complete the same task the user requested; the failure does not revoke the user's authorization, so do not ask again. Respect an explicit user or platform denial and never route around it. Ask only if the fallback would exceed the user's request or add a new external side effect that was not authorized.";
   it("is said wherever a browser or a screen is mounted, a Cloud home's too", () => {
     for (const mounted of [{ computer: "local" as const, browser: true }, { computer: "local" as const, browser: false }, { computer: "cloud" as const, browser: true }, { computer: null, browser: true }]) {
       expect(surfacePrompt(mounted), JSON.stringify(mounted)).toContain(RULE);
@@ -445,5 +445,11 @@ describe("a connected app before any screen", () => {
   });
   it("is not said where nothing on a screen can be done", () => {
     expect(surfacePrompt({ computer: null, browser: false })).not.toContain(RULE);
+  });
+  it("continues an already authorized task after a tool error without bypassing an explicit denial", () => {
+    const prompt = surfacePrompt({ computer: "vm", browser: false });
+    expect(prompt).toContain("the failure does not revoke the user's authorization, so do not ask again");
+    expect(prompt).toContain("Respect an explicit user or platform denial and never route around it.");
+    expect(prompt).not.toContain("ask before doing the task on a screen instead");
   });
 });

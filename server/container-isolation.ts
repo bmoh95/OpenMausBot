@@ -1,6 +1,7 @@
 // The isolation contract every desktop container is made with and checked against: capabilities, the root rule, host ids.
 import type { Runtime } from "./container-computer.ts";
 import { MAX_DESKTOP_CPUS, MIN_DESKTOP_CPUS, MIN_DESKTOP_MEMORY_GB } from "./container-limits.ts";
+import { LOCAL_VM_ADMIN_CAPS } from "./local-vm-admin.ts";
 
 /** The run flags a desktop was made with. A desktop made under other flags is updated like one on an older image. */
 export const DESKTOP_FLAGS_LABEL = "com.openmausbot.desktop-flags";
@@ -99,8 +100,10 @@ function capSetKey(caps: string[] | null | undefined): string {
   return (caps ?? []).map((cap) => cap.toLowerCase().replace(/^cap_/, "")).sort().join(",");
 }
 
-function isHardenedCapSet(caps: string[] | null | undefined, podmanBrowserSandbox: boolean): boolean {
+function isHardenedCapSet(caps: string[] | null | undefined, podmanBrowserSandbox: boolean, containerAdmin = false): boolean {
   const key = capSetKey(caps);
+  // Operator admin mode is an exact set. Anything extra, including SYS_ADMIN, fails.
+  if (containerAdmin) return key === capSetKey(LOCAL_VM_ADMIN_CAPS);
   return HARDENED_CAP_SETS.some((set) => capSetKey(podmanBrowserSandbox ? [...set, "SYS_CHROOT"] : set) === key);
 }
 
@@ -117,6 +120,7 @@ export function dockerSecurityIsHardened(
     restartPolicy?: "no" | "unless-stopped" | "any";
     podmanBrowserSandbox?: boolean;
     requireNoNewPrivileges?: boolean;
+    containerAdmin?: boolean;
   } = {},
 ): boolean {
   if (!config) return false;
@@ -130,7 +134,7 @@ export function dockerSecurityIsHardened(
       : restartPolicy === undefined || restartPolicy === "" || restartPolicy === "no");
   return (
     capDrop.includes("all") &&
-    isHardenedCapSet(config.CapAdd, options.podmanBrowserSandbox === true) &&
+    isHardenedCapSet(config.CapAdd, options.podmanBrowserSandbox === true, options.containerAdmin === true) &&
     (options.requireNoNewPrivileges !== true || noNewPrivileges) &&
     config.Privileged === false &&
     !config.PidMode &&

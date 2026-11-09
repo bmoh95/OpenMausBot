@@ -8,6 +8,7 @@ import { join, resolve } from "node:path";
 import { promisify } from "node:util";
 
 import { augmentedPath, resolveCliSpawn } from "./env-path.ts";
+import { localVmAdminEnabled, LOCAL_VM_ADMIN_CAPS, localVmHomeDir, localVmMemoryGb } from "./local-vm-admin.ts";
 import { workspacePreparationDockerfile } from "./container-workspace.ts";
 import { DATA_DIR } from "./config.ts";
 import {
@@ -54,7 +55,7 @@ export const BASE_IMAGE = `${BASE_IMAGE_REPOSITORY}@${BASE_IMAGE_DIGEST}`;
 export const IMAGE_REPOSITORY = "localhost/openmausbot/cua-local-vm";
 export const IMAGE_LAYER_VERSION = "9";
 export const IMAGE_LAYER_LABEL = "com.openmausbot.image-layer";
-export const IMAGE = `${IMAGE_REPOSITORY}:driver-${CUA_DRIVER_VERSION}-v${IMAGE_LAYER_VERSION}`;
+export const IMAGE = process.env.OMB_LOCAL_VM_IMAGE || `${IMAGE_REPOSITORY}:driver-${CUA_DRIVER_VERSION}-v${IMAGE_LAYER_VERSION}`;
 export const CONTAINER = "openmausbot-computer";
 export const MANAGED_LABEL = "com.openmausbot.local-vm";
 export const DRIVER_LABEL = "com.openmausbot.cua-driver";
@@ -591,12 +592,16 @@ export async function containerComputerStatus(
         target.workspaceDir,
         status.runtime,
       ) ? "durable" : "unsafe";
+      const adminDesktop = status.runtime === "docker" && localVmAdminEnabled();
       status.security = (
         status.runtime === "podman"
           ? podmanSecurityIsHardened(detail?.HostConfig, detail?.EffectiveCaps, detail?.BoundingCaps, {
             requireNoNewPrivileges: rootIsHostRoot,
           })
-          : dockerSecurityIsHardened(detail?.HostConfig, { requireNoNewPrivileges: rootIsHostRoot })
+          : dockerSecurityIsHardened(detail?.HostConfig, {
+            requireNoNewPrivileges: rootIsHostRoot,
+            ...(adminDesktop ? { containerAdmin: true, restartPolicy: "unless-stopped" as const } : {}),
+          })
       ) ? "hardened" : "unsafe";
       status.viewer_url = viewerUrl(viewerPassword(detail?.Config?.Env), status.viewer_port);
     }
@@ -744,17 +749,13 @@ function dockerWorkspaceMountIsSafe(
   expectedWorkspace: string,
   runtime: Runtime = "docker",
 ): boolean {
-  const sourceMatches = sameWorkspaceSource(mounts?.[0]?.Source, platform, expectedWorkspace) ||
-    (runtime === "podman" &&
-      platform === "win32" &&
-      samePodmanWindowsWorkspaceSource(mounts?.[0]?.Source, expectedWorkspace));
-  return Boolean(
-    mounts?.length === 1 &&
-      mounts[0]?.Type === "bind" &&
-      sourceMatches &&
-      mounts[0]?.Destination === VM_WORKSPACE_GUEST &&
-      mounts[0]?.RW !== false,
-  );
+  const workspace = mounts?.find(m => m.Destination === VM_WORKSPACE_GUEST);
+  const sourceMatches = sameWorkspaceSource(workspace?.Source, platform, expectedWorkspace) ||
+    (runtime === "podman" && platform === "win32" && samePodmanWindowsWorkspaceSource(workspace?.Source, expectedWorkspace));
+  const home = mounts?.find(m => m.Destination === "/home/cua");
+  const durableHome = runtime === "docker" && localVmAdminEnabled() && mounts?.length === 2 &&
+    home?.Type === "bind" && home.Source === localVmHomeDir(expectedWorkspace) && home.RW !== false;
+  return Boolean((mounts?.length === 1 || durableHome) && workspace?.Type === "bind" && sourceMatches && workspace.RW !== false);
 }
 
 function appleWorkspaceMountIsSafe(
@@ -823,6 +824,16 @@ export function containerRunArgs(
   }
   if (desktopRootIsHostRoot(runtime, desktop.platform, desktop.hostUser)) common.push("--security-opt", "no-new-privileges");
   const guestIds = guestIdsFor(runtime, desktop.platform, desktop.hostUser);
+  if (runtime === "docker" && localVmAdminEnabled()) {
+    for (const cap of LOCAL_VM_ADMIN_CAPS) {
+      if (!common.includes(cap)) common.push("--cap-add", cap);
+    }
+    common.push("--restart", "unless-stopped");
+    const memory = common.indexOf("--memory");
+    const swap = common.indexOf("--memory-swap");
+    common[memory + 1] = `${localVmMemoryGb()}g`;
+    common[swap + 1] = `${localVmMemoryGb()}g`;
+  }
   common.push(
     "--mount",
     runtime === "podman"
@@ -836,12 +847,14 @@ export function containerRunArgs(
       : `127.0.0.1::${INTERNAL_VIEWER_PORT}`,
     IMAGE,
   );
+  if (runtime === "docker" && localVmAdminEnabled()) common.splice(common.length - 1, 0, "--mount", `type=bind,source=${localVmHomeDir(target.workspaceDir)},target=/home/cua`);
   if (guestIds) common.push(...guestIdsCommand(guestIds));
   return common;
 }
 
 async function ensureVmWorkspace(platform: NodeJS.Platform, target: LocalVmTarget, runtime: Runtime): Promise<void> {
   await mkdir(target.workspaceDir, { recursive: true, mode: 0o770 });
+  if (localVmAdminEnabled()) await mkdir(localVmHomeDir(target.workspaceDir), { recursive: true, mode: 0o770 });
   if (platform === "win32") return;
   await chmod(target.workspaceDir, 0o770);
   const host = currentHostUser(platform);
@@ -858,6 +871,7 @@ function baseImagePullArgs(runtime: Runtime): string[] {
 }
 
 async function prepareManagedImage(runtime: Runtime, runner: CommandRunner): Promise<void> {
+  if (process.env.OMB_LOCAL_VM_IMAGE) throw new Error("This Local VM uses an operator-managed image with installed applications. Update that image explicitly; automatic base-image replacement is disabled.");
   await runner(runtime, baseImagePullArgs(runtime), 10 * 60_000);
   const context = await mkdtemp(join(tmpdir(), "openmausbot-cua-image-"));
   try {
@@ -923,6 +937,10 @@ export async function containerComputerAction(
         : action === "remove"
           ? ["rm", runtime === "container" ? "--force" : "-f", target.containerName]
           : [action, target.containerName];
+    if (action === "remove" && runtime === "docker" && localVmAdminEnabled() && process.env.OMB_LOCAL_VM_IMAGE && target.key === "shared") {
+      // Preserve package installs before an intentional managed replacement; a failed snapshot keeps the old VM.
+      await runner(runtime, ["commit", "--pause=true", target.containerName, IMAGE], 5 * 60_000);
+    }
     await runner(runtime, args, 2 * 60_000);
   }
   return containerComputerStatus(runner, platform, target);

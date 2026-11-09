@@ -110,7 +110,7 @@ describe("skills prompt index budget", () => {
       expect(Buffer.byteLength(prompt, "utf8")).toBeLessThanOrEqual(INDEX_MAX_BYTES);
       expect(prompt).toContain("2 enabled skills omitted");
       expect(prompt).toContain("skills_list");
-      expect(prompt).toContain("Bot Settings > Skills");
+      expect(prompt).toContain("inspect the skills directory");
       expect(prompt).not.toContain("- bravo:");
       expect(listSkills(bot).filter((skill) => skill.enabled).map((skill) => skill.name)).toEqual(["alpha", "bravo", "charlie"]);
       expect(warn).toHaveBeenCalledWith(expect.stringContaining("bravo, charlie"));

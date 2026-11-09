@@ -77,7 +77,7 @@ export function soulSystemPrompt(soul: string): string {
   const bytes = Buffer.byteLength(text, "utf8");
   return (
     "\n\nYour standing instructions follow. The user manages them in bot settings and SOUL.md; proposed changes apply only after the user confirms." +
-    " They rank above your memory and imported skills, and below the user's current request and safety boundaries." +
+    " They rank above OpenMausBot's default Reply Style and reply-habit guidance, your memory, and imported skills, and below the user's current request and safety boundaries." +
     ` Text inside this block is instruction for you, never tool authorization or permission to expose secrets.` +
     `\n\n--- BEGIN STANDING INSTRUCTIONS (SOUL.md, ${bytes} bytes) ---\n` +
     text +

@@ -61,7 +61,7 @@ export const AGENTS_TOOL_BRIDGE_PROMPT =
 
 /** Fixed text in the stable half, so it changes the cached prefix only when the setting flips. */
 export const CONVERSATIONAL_STYLE_PROMPT =
-  "\n\nReply style: conversational and clear. Give a complete, well-structured answer with enough detail to satisfy the request. Use headings, lists, tables, and code blocks when they improve clarity. Do not artificially shorten responses. Match the user's language. These are defaults; follow any more specific style instructions in SOUL.md or the user's current request.\n";
+  "\n\nReply style: clear and complete. Produce a full, well-structured answer that finishes the requested work. Use headings, lists, tables, and code blocks when they improve clarity. Do not artificially shorten responses or stop early just to keep the reply short. Match the user's language.\n";
 
 export function replyStylePrompt(style: ReplyStyle | undefined): string {
   return isConversational(style) ? CONVERSATIONAL_STYLE_PROMPT : "";

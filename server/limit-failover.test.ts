@@ -10,6 +10,11 @@ const NOW = Date.parse("2026-10-19T10:00:00Z");
 const HOUR = 3_600_000;
 
 describe("limitBackupAllowed", () => {
+  it("permits only the two explicitly configured account pair directions", () => {
+    expect(limitBackupAllowed({ instanceId: "codex-account-2", driverKind: "codex" }, { instanceId: "codex", driverKind: "codex" })).toBe(true);
+    expect(limitBackupAllowed({ instanceId: "grok", driverKind: "grokAgent" }, { instanceId: "grok-account-2", driverKind: "grokAgent" })).toBe(true);
+    expect(limitBackupAllowed({ instanceId: "codex", driverKind: "codex" }, { instanceId: "codex-account-2", driverKind: "codex" })).toBe(false);
+  });
   it("never rotates to another sign-in of the same subscription engine", () => {
     expect(limitBackupAllowed(claude, claude)).toBe(false);
     expect(limitBackupAllowed(claude, { instanceId: "claude-work", driverKind: "claudeAgent" }, {})).toBe(false);

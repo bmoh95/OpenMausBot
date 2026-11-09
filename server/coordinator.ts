@@ -1,4 +1,5 @@
 import { RuntimeCoordinator } from "./runtime-coordinator.ts";
+import type { WorkCheckpointInput, WorkCheckpoint } from "./work-checkpoint.ts";
 import type { WorkOrigin } from "./peer-provenance.ts";
 import type { LegacyThreadResolver } from "./runtime/import-legacy.ts";
 import type { Answerer, Assignment, EnvelopeNames, Level, Limits, Mode, Origin, Outcome, Owner, Reply, Requester, StatusView, TurnEvidence } from "./runtime/types.ts";
@@ -185,6 +186,7 @@ export interface Coordinator {
   runningIn(threadId: string): HandoffView[];
   beginTurn(req: BeginTurnRequest): HandoffView;
   endTurn(id: string, result: HostTurnResult): void;
+  checkpoint(id: string, input: WorkCheckpointInput): WorkCheckpoint;
   /** The parked node's next turn carries `text`, given by the person unless `by` says otherwise. */
   answerNode(id: string, text: string, by?: Answerer): boolean;
   answerRoot(id: string, text: string): boolean;

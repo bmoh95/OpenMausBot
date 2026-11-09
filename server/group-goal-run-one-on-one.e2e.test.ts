@@ -93,6 +93,7 @@ beforeAll(async () => {
     instances: {
       done: fixture("done", {
         FAKE_CLAUDE_MODE: "happy",
+        FAKE_CLAUDE_TOOL_CALLS: JSON.stringify([{ name: "Bash", input: { command: "true" }, ok: true, output: "verified fixture" }]),
         FAKE_CLAUDE_REPLIES: JSON.stringify([
           `I fixed the parser test.\n${envelope({ status: "continue", next: "Solo", instruction: "Fix the last failing test", detail: "One test left" })}`,
           `Every test passes now.\n${envelope({ status: "completed", detail: "All tests pass." })}`,
@@ -101,6 +102,7 @@ beforeAll(async () => {
       }),
       loop: fixture("loop", {
         FAKE_CLAUDE_MODE: "happy",
+        FAKE_CLAUDE_TOOL_CALLS: JSON.stringify([{ name: "Bash", input: { command: "true" }, ok: true, output: "verified fixture" }]),
         FAKE_CLAUDE_REPLIES: JSON.stringify(Array.from({ length: 66 }, (_, index) =>
           `Not there yet.\n${envelope({ status: "continue", next: "Looper", instruction: `Try approach ${index + 1}`, detail: "Still working" })}`)),
       }),
@@ -115,6 +117,7 @@ beforeAll(async () => {
       crash: fixture("crash", { FAKE_CLAUDE_MODE: "exit-early" }),
       routine: fixture("routine", {
         FAKE_CLAUDE_MODE: "happy",
+        FAKE_CLAUDE_TOOL_CALLS: JSON.stringify([{ name: "Bash", input: { command: "true" }, ok: true, output: "verified fixture" }]),
         FAKE_CLAUDE_REPLIES: JSON.stringify([`Reviewed.\n${envelope({ status: "completed", detail: "Scheduled review done." })}`, verificationReply]),
       }),
     },

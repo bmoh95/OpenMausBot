@@ -1,4 +1,5 @@
 import { join } from "node:path";
+import type { WorkCheckpointInput, WorkCheckpoint } from "./work-checkpoint.ts";
 
 import type { BeginTurnRequest, Coordinator, CoordinatorHost, CoordinatorOptions, HandoffLimit, HandoffOptions, HandoffView, HostTurnResult, LiveHandoffEdge, RoomAddress } from "./coordinator.ts";
 import type { WorkOrigin } from "./peer-provenance.ts";
@@ -359,6 +360,11 @@ export class RuntimeCoordinator implements Coordinator {
       ...(result.cap ? { continue: { note: result.cap.note, ...(result.cap.handoffPath ? { handoffPath: result.cap.handoffPath } : {}) } } : {}),
       ...(result.stalled ? { stalled: true } : {}) };
     this.runtime.end(id, end);
+  }
+
+  checkpoint(id: string, input: WorkCheckpointInput): WorkCheckpoint {
+    this.ready();
+    return this.runtime.checkpoint(id, input).work!;
   }
 
   answerNode(id: string, text: string, by?: Answerer): boolean {

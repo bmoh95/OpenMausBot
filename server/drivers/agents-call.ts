@@ -340,6 +340,10 @@ export async function callTool(called: string, input: Json, context: ToolCallCon
     }) });
     return { text: JSON.stringify(r), ...(r.error ? { isError: true } : {}) };
   }
+  if (name === "work_checkpoint") {
+    const { ok, body } = await apiResponse("/api/internal/work-checkpoint", { method: "POST", body: JSON.stringify(args) });
+    return { text: JSON.stringify(body), ...(!ok ? { isError: true } : {}) };
+  }
   if (name === "assignment_status") {
     const id = args.id === undefined || args.id === null || args.id === "" ? "" : String(args.id).trim();
     if (id && !/^[\w-]{4,64}$/.test(id)) {

@@ -1,3 +1,4 @@
+import { goalEvidence, type GoalEvidence } from "./goal-evidence.ts";
 // Import first: it reads a Cloud home's secrets off the launcher's pipe before any module can start a process.
 import { BOOT_CLOUD_SECRETS } from "./cloud-secrets-boot.ts";
 import { startFailureText } from "./start-failure-text.ts";
@@ -327,6 +328,7 @@ import { narrateTool, toUtterances } from "./tts/speech-text.ts";
 import { createTtsRoutes } from "./routes/tts.ts";
 import { turnStartLogLine } from "./turn-log.ts";
 import { TurnStops, outwardActions, stoppedTurnOutcome, turnEvidence } from "./turn-outcome.ts";
+import { workCheckpointInput } from "./work-checkpoint.ts";
 import { buildRecoveryText, buildTurnContext, engineIsFresh, replaysNatively } from "./turn-context.ts";
 import { Handoffs, handedStateUsable, isContextMessage, recordHanded, renderUnseen, sessionStart, unseenMessages, withUnseenMessages, type ContextMessage } from "./delta-context.ts";
 import { extractReplayImages, extractTurnImages, videoFramesWithin } from "./turn-images.ts";
@@ -10731,7 +10733,7 @@ async function runGroupGoalStep(args: {
   skillAuthoringClaim: { claimed: boolean };
   coordinator: boolean;
   instructions: string;
-}): Promise<{ ran: boolean; replyText: string; outcome?: GroupMemberTurnOutcome; stopReason?: string | null }> {
+}): Promise<{ ran: boolean; replyText: string; outcome?: GroupMemberTurnOutcome; stopReason?: string | null; evidence?: GoalEvidence[] }> {
   const run = args.operation.goalRun;
   if (!run || args.operation.cancelled || run.turnCount >= run.maxTurns) {
     return { ran: false, replyText: "" };
@@ -10758,6 +10760,7 @@ async function runGroupGoalStep(args: {
     const result: GroupTurnOrchestration["result"] = {};
     let claimed = false;
     const coordinatorTurn = args.coordinator ? goalTurns.begin(args.threadId) : undefined;
+    let goalProviderTurnId: string | undefined;
     try {
       const ran = await runGroupMemberTurn(
         args.groupId,
@@ -10787,6 +10790,7 @@ async function runGroupGoalStep(args: {
             );
           },
           onTurnStarted: (turnId) => {
+            goalProviderTurnId = turnId;
             if (coordinatorTurn && !coordinatorTurn.turnId) coordinatorTurn.turnId = turnId;
           },
         },
@@ -10798,6 +10802,7 @@ async function runGroupGoalStep(args: {
         replyText: result.replyText ?? "",
         outcome: result.outcome,
         stopReason: result.stopReason,
+        evidence: goalEvidence(store.messagesFor(args.threadId), goalProviderTurnId),
       };
     } finally {
         // An idle waiter must never redirect the bot's Stop button away from unrelated direct work.
@@ -13956,6 +13961,13 @@ const handleRequest = async (req: IncomingMessage, res: ServerResponse) => {
         return { status: sent ? 200 : 409, body: { receipts, ...(sent ? { message: lead ? `${lead} ${message}` : message } : { error: refused.join("; ") }),
           ...(EXTERNAL && sent ? { rootId: generation } : {}) } };
       };
+      if (method === "POST" && path === "/api/internal/work-checkpoint") {
+        const parsed = workCheckpointInput.safeParse(await readInternalBody());
+        if (!parsed.success) return json(res, 400, { error: parsed.error.issues.map(issue => issue.message).join("; ") });
+        const node = coordinator.node(internalCapability.generation);
+        if (!node || node.threadId !== internalCapability.threadId || node.botId !== internalSender.id || (node.status !== "source" && node.status !== "running")) return json(res, 409, { error: "No running work assignment owns this checkpoint" });
+        return json(res, 200, { checkpoint: coordinator.checkpoint(node.id, parsed.data), message: "Progress saved. Continue the authorized work; this does not grant permissions or certify completion." });
+      }
       if (method === "GET" && path === "/api/internal/assignment-status") {
         const id = url.searchParams.get("id")?.trim() ?? "";
         const fromThreadId = internalCapability.threadId;
@@ -13965,7 +13977,7 @@ const handleRequest = async (req: IncomingMessage, res: ServerResponse) => {
         const shape = (a: Row) => ({
           id: a.id, botId: a.assignee.botId, botName: store.bot(a.assignee.botId)?.name ?? a.assignee.botId, status: a.status,
           ...(a.outcome !== undefined ? { outcome: a.outcome } : {}), ...(a.outcomeDetail !== undefined ? { outcomeDetail: a.outcomeDetail } : {}),
-          result: a.result, ...(a.question !== undefined ? { question: a.question } : {}), mode: a.mode, reply: a.reply, ...queuedWaiting(a.id),
+          result: a.result, ...(a.question !== undefined ? { question: a.question } : {}), ...(a.work ? { checkpoint: a.work } : {}), mode: a.mode, reply: a.reply, ...queuedWaiting(a.id),
           createdAt: a.createdAt, ...(a.startedAt !== undefined ? { startedAt: a.startedAt } : {}), ...(a.finishedAt !== undefined ? { finishedAt: a.finishedAt } : {}),
         });
           // Only this conversation's own tree; a row of another conversation is refused.

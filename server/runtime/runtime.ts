@@ -3,6 +3,7 @@ import { randomUUID } from "node:crypto";
 import { redactSecretsInText } from "../../shared/redact.ts";
 
 import { composeEnvelope } from "./envelope.ts";
+import { workCheckpointInput, workCheckpointNote, workContinuationLimit, type WorkCheckpointInput } from "../work-checkpoint.ts";
 import { assignmentLevel } from "./level.ts";
 import type { RuntimeStore } from "./store.ts";
 import { answersSender, asking, awaited, childrenSince, settledSince, clip, continuations, CUT_TWICE, duration, isTerminal, loopStop, nextGuard, outwardDetail, ownsConversation, ownThread, path, restartNote, wakeOwner } from "./tree.ts";
@@ -165,6 +166,16 @@ export class Runtime {
     } catch (error) {
       this.log(`end(${rootId}) failed: ${String(error)}`);
     }
+  }
+
+  checkpoint(id: string, input: WorkCheckpointInput): Assignment {
+    const n = this.store.get(id);
+    if (!n || n.status !== "running" || n.mode !== "work") throw new Error("No running work assignment owns this checkpoint");
+    const value = workCheckpointInput.parse(input);
+    n.work = { ...value, execution: n.executions, updatedAt: this.clock.now(), continuations: n.work?.continuations ?? 0 };
+    this.store.update(n, { kind: "progress", at: this.clock.now(), detail: `checkpoint: ${value.status}` });
+    this.touch(n);
+    return n;
   }
 
   /** Remove terminal trees that finished before `before`. Returns rows removed. */
@@ -461,6 +472,23 @@ export class Runtime {
     if (!this.lastThrew && problem) { this.settle(n, "failed", "refused", problem); return; }
     if (result.evidence) n.evidence = result.evidence;
     const root = n.parentId ? this.store.get(n.rootId) : n;
+    const hasChildren = awaited(this.store.children(n.id)).some(c => !isTerminal(c) || !live?.carried.has(c.id));
+    if (result.kind === "completed" && n.work && !n.goalRunId && !hasChildren) {
+      if (n.work.status === "needs_input") {
+        result = { kind: "needs_input", question: n.work.summary, evidence: result.evidence };
+      } else if (n.work.status === "working") {
+        if (result.evidence?.outward?.length) {
+          this.settle(n, "failed", "interrupted", "Task has unfinished work after an outward action. Progress was saved; inspect the action before resuming to avoid repeating it.");
+          return;
+        }
+        if (n.work.continuations >= workContinuationLimit()) {
+          this.settle(n, "failed", "budget", "Task checkpoint still has unfinished work; automatic continuation limit reached. Progress is saved; resume this conversation to continue.");
+          return;
+        }
+        n.work.continuations += 1;
+        result = { kind: "continue", text: result.text, note: workCheckpointNote(n.work), evidence: result.evidence };
+      }
+    }
     if (result.kind === "continue") {
       // The count comes from events because dispatch deletes n.continuation.
       n.result = clip(result.text, RESULT_MAX);

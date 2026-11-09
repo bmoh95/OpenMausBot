@@ -75,6 +75,11 @@ const assignmentSchema = z.object({
   // The schema strips any field it does not name: every optional Assignment field must be listed here.
   cards: z.array(z.string()).optional(),
   continuation: z.object({ note: z.string(), handoffPath: z.string().optional(), count: z.number().int().nonnegative() }).optional(),
+  work: z.object({
+    status: z.enum(["working", "completed", "needs_input"]), summary: z.string(),
+    remaining: z.array(z.string()), next_action: z.string().optional(),
+    execution: z.number().int().nonnegative(), updatedAt: z.number(), continuations: z.number().int().nonnegative(),
+  }).optional(),
   guard: z.object({ stale: z.number().int().nonnegative(), errors: z.array(z.string()) }).optional(),
   carrying: z.array(z.string()).optional(),
   approved: z.boolean().optional(),

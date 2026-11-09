@@ -248,6 +248,23 @@ const TOOL_DEFINITIONS = [
     } },
   },
   {
+    name: "work_checkpoint",
+    description: "Save this task's durable progress after a meaningful step and before ending a multi-step implementation turn. working requires remaining work and next_action; if your turn ends with working, the harness continues this same task within its recovery budget. completed requires remaining [] and appropriate outcome verification; this ledger alone is not evidence. needs_input is only for a genuine human authentication, missing required input or external dependency. It grants no permissions, runs no commands, and never replaces coordinate_bots. Do not use for casual chat or consultations. Never include secrets.",
+    inputSchema: { type: "object", additionalProperties: false, properties: {
+      status: { type: "string", enum: ["working", "completed", "needs_input"] },
+      summary: { type: "string", minLength: 1, maxLength: 2000 },
+      remaining: { type: "array", items: { type: "string", minLength: 1, maxLength: 2000 }, maxItems: 20 },
+      next_action: { type: "string", minLength: 1, maxLength: 2000 },
+    }, required: ["status", "summary", "remaining"] },
+  },
+  {
+    name: "raise_escalation",
+    description: "Flag a gate only the person can lift — a permission or decision your work is parked on and you cannot proceed without. One reason line, the person's own words where possible; the Chief of Staff (or the person directly) is told at once. Then end your turn and wait: the gate lifting resumes nothing on its own, so say plainly that you stopped and why. Not for failures (those report themselves), not for a credential or sign-in (use request_credential or request_sign_in, which resume you), and not to ask the person a question you could ask by ending your turn on it.",
+    inputSchema: { type: "object", additionalProperties: false, properties: {
+      reason: { type: "string", minLength: 1, description: "One line: what you need from the person and why your work is parked on it." },
+    }, required: ["reason"] },
+  },
+  {
     name: "list_bots",
     description:
       "List every other bot (agent) you can contact, in every department, with its department, model and current status. Call this to discover exact teammate IDs before assigning work or asking advice with coordinate_bots.",

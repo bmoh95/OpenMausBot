@@ -27,13 +27,22 @@ describe("PWA push worker", () => {
     expect(target.startsWith("/#push=")).toBe(true);
     expect(JSON.parse(decodeURIComponent(target.slice(7)))).toEqual({ botId: "b1", threadId: "t1" });
   });
-  it("suppresses banners for a focused app but always shows the explicit test", async () => {
+  it("shows a real notice while the app is focused, and still shows the explicit test", async () => {
     const f = worker(true);
     let waited = Promise.resolve();
-    const push = (test: boolean) => f.listeners.get("push")!({ data: { json: () => ({ id: "test", title: "Test", test }) }, waitUntil: (p: Promise<void>) => { waited = p; } });
+    const push = (test: boolean) => f.listeners.get("push")!({ data: { json: () => ({ id: test ? "test" : "n1", title: "Test", test }) }, waitUntil: (p: Promise<void>) => { waited = p; } });
     push(false); await waited;
-    expect(f.showNotification).not.toHaveBeenCalled();
+    expect(f.showNotification).toHaveBeenCalledTimes(1);
     push(true); await waited;
+    expect(f.showNotification).toHaveBeenCalledTimes(2);
+  });
+
+  it("does not drop a new notice when the browser returns an older notification for another tag", async () => {
+    const f = worker();
+    f.self.registration.getNotifications.mockResolvedValue([{ tag: "omb-push:older" }]);
+    let waited = Promise.resolve();
+    f.listeners.get("push")!({ data: { json: () => ({ id: "n2", title: "OpenMausBot", body: "done" }) }, waitUntil: (p: Promise<void>) => { waited = p; } });
+    await waited;
     expect(f.showNotification).toHaveBeenCalledTimes(1);
   });
 });

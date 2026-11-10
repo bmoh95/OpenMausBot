@@ -3,11 +3,10 @@ self.addEventListener("activate", event => event.waitUntil(self.clients.claim())
 
 async function show(payload) {
   if (!payload || typeof payload.title !== "string") return;
-  const windows = await self.clients.matchAll({ type: "window", includeUncontrolled: true });
-  if (!payload.test && windows.some(client => client.focused && client.visibilityState === "visible")) return;
+  // A background PWA often stays a focused client, so visibility cannot decide whether to show the push.
   const tag = `omb-push:${payload.id || "notice"}`;
   const existing = await self.registration.getNotifications({ tag });
-  if (existing.length) return;
+  if (existing.some(notification => notification.tag === tag)) return;
   await self.registration.showNotification(payload.title.slice(0, 120), {
     body: String(payload.body || "").slice(0, 300),
     icon: "/app-icon-192.png", badge: "/app-icon-192.png", tag,

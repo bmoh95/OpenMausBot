@@ -656,6 +656,13 @@ export class SessionRegistry {
     return this.sessions.some((s) => s.id === sessionId && !this.personal(s.scopes));
   }
 
+  /** Re-evaluate membership and expiry for background delivery without renewing the session. */
+  liveSession(sessionId: string): SessionRecord | null {
+    this.recheckMembership();
+    this.prune();
+    return this.sessions.find(s => s.id === sessionId && !this.personal(s.scopes)) ?? null;
+  }
+
   list(): PublicSession[] {
     this.prune();
     return this.sessions.map(publicSession);

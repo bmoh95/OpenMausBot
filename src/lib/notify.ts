@@ -1,6 +1,7 @@
 import type { Notification } from "../../shared/notification";
 import { plainPreviewText } from "../../shared/plain-preview";
 import { finishedNotificationsEnabled, notificationSoundsEnabled } from "./notification-preferences";
+import { pushEnabled, pushWorker } from "./web-push";
 
 export type NotifyFrame = Notification;
 
@@ -42,6 +43,7 @@ export function showNotification(
   const spend = frame.kind === "spend";
   if (!spend && document.hasFocus() && visibleThreadId === frame.threadId) return;
   if (Notification.permission !== "granted") return;
+  if (pushEnabled()) return;
 
   const title = placeName ? `${placeName} · ${frame.title}` : frame.title;
   // Entries saved before the harness spoke plain text still carry Markdown.
@@ -53,6 +55,12 @@ export function showNotification(
     ...(notificationSoundsEnabled() ? {} : { silent: true }),
   };
   const shownByPage = () => {
+    if ("serviceWorker" in navigator && window.isSecureContext) {
+      void pushWorker().then(registration => registration.showNotification(title, {
+        ...options, data: { botId: frame.botId, threadId: frame.threadId },
+      })).catch(() => {});
+      return;
+    }
     new Notification(title, options).onclick = () => {
       window.focus();
       onOpen({ botId: frame.botId, threadId: frame.threadId });

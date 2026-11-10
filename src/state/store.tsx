@@ -1,3 +1,4 @@
+import { usePushNotificationNavigation } from "../lib/push-navigation";
 import { cloudAsleep, onCloudPower } from "../lib/cloud-power";
 import { api, ApiError, retryRequest, snapshotArrays } from "./api";
 import {
@@ -74,10 +75,8 @@ import { openLiveEvents, publishLiveFrame, publishMissedFrames, withoutScreenPix
 import { unlessRefused } from "@/lib/admin-scope";
 import { olderRunsSince, ROUTINE_RUNS_WINDOW_MS, trimRoutineRuns, withOlderRoutineRuns } from "./routine-runs";
 import { reconcileSnapshotQueues, rememberConsumedQueueId, replaceBotQueues } from "./queue-receipts";
-
 export type { MausColor } from "@/lib/mascot";
 export type { RoutineRunCardData } from "../../shared/routine-run";
-
 export interface OptionCardData extends Pick<WireOptionCard, "fixedOptions" | "lendingLift" | "webhookRequest" | "appTriggerRequest" | "yourComputer" | "computerAsk" | "waitRequest" | "stopped" | "accessRequest" | "mcpRequest" | "summaryCode" | "summaryParams"> {
   title: string;
   subtitle: string;
@@ -3310,22 +3309,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const lastFocusProbe = useRef(0);
-  useEffect(() => {
-    if (!state.hydrated || !("serviceWorker" in navigator)) return;
-    const open = (target: unknown) => {
-      if (!target || typeof target !== "object") return;
-      const candidate = target as { botId?: unknown; threadId?: unknown };
-      if (typeof candidate.botId === "string" && typeof candidate.threadId === "string")
-        openThread(dispatch, { botId: candidate.botId, threadId: candidate.threadId }, stateRef.current, showThreadsRef.current);
-    };
-    const message = (event: MessageEvent) => { if (event.data?.type === "OPEN_PUSH_NOTIFICATION") open(event.data.target); };
-    navigator.serviceWorker.addEventListener("message", message);
-    if (location.hash.startsWith("#push=")) {
-      try { open(JSON.parse(decodeURIComponent(location.hash.slice(6)))); } catch { /* Ignore invalid navigation data. */ }
-      history.replaceState(null, "", location.pathname + location.search);
-    }
-    return () => navigator.serviceWorker.removeEventListener("message", message);
-  }, [state.hydrated, dispatch]);
+  usePushNotificationNavigation(Boolean(state.hydrated), target => openThread(dispatch, target, stateRef.current, showThreadsRef.current));
   useEffect(() => {
     const onFocus = () => {
       const now = Date.now();

@@ -37,12 +37,11 @@ describe("PWA push worker", () => {
     expect(f.showNotification).toHaveBeenCalledTimes(2);
   });
 
-  it("does not drop a new notice when the browser returns an older notification for another tag", async () => {
+  it("still shows a notice when the installed app delivers no readable payload", async () => {
     const f = worker();
-    f.self.registration.getNotifications.mockResolvedValue([{ tag: "omb-push:older" }]);
     let waited = Promise.resolve();
-    f.listeners.get("push")!({ data: { json: () => ({ id: "n2", title: "OpenMausBot", body: "done" }) }, waitUntil: (p: Promise<void>) => { waited = p; } });
+    f.listeners.get("push")!({ data: { json: () => { throw new Error("no payload"); } }, waitUntil: (p: Promise<void>) => { waited = p; } });
     await waited;
-    expect(f.showNotification).toHaveBeenCalledTimes(1);
+    expect(f.showNotification).toHaveBeenCalledWith("OpenMausBot", expect.objectContaining({ body: "새 알림이 있어요." }));
   });
 });

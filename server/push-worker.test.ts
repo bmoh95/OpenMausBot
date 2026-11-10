@@ -20,7 +20,7 @@ describe("PWA push worker", () => {
     let waited: Promise<void> = Promise.resolve();
     f.listeners.get("push")!({ data: { json: () => ({ id: "n1", title: "OpenMausBot", body: "done", botId: "b1", threadId: "t1" }) }, waitUntil: (p: Promise<void>) => { waited = p; } });
     await waited;
-    expect(f.showNotification).toHaveBeenCalledWith("OpenMausBot", expect.objectContaining({ tag: "omb-push:n1", data: { botId: "b1", threadId: "t1" } }));
+    expect(f.showNotification).toHaveBeenCalledWith("OpenMausBot", expect.objectContaining({ tag: "omb-push:n1", vibrate: [180, 80, 180], data: { botId: "b1", threadId: "t1" } }));
     f.listeners.get("notificationclick")!({ notification: { close: vi.fn(), data: { botId: "b1", threadId: "t1" } }, waitUntil: (p: Promise<void>) => { waited = p; } });
     await waited;
     const target = f.openWindow.mock.calls[0][0] as string;
@@ -43,5 +43,15 @@ describe("PWA push worker", () => {
     f.listeners.get("push")!({ data: { json: () => { throw new Error("no payload"); } }, waitUntil: (p: Promise<void>) => { waited = p; } });
     await waited;
     expect(f.showNotification).toHaveBeenCalledWith("OpenMausBot", expect.objectContaining({ body: "새 알림이 있어요." }));
+  });
+
+  it("does not attach a vibration to a silent notice", async () => {
+    const f = worker();
+    let waited = Promise.resolve();
+    f.listeners.get("push")!({ data: { json: () => ({ id: "quiet", title: "OpenMausBot", silent: true }) }, waitUntil: (p: Promise<void>) => { waited = p; } });
+    await waited;
+    const options = f.showNotification.mock.calls[0]?.[1] as { silent?: boolean; vibrate?: number[] };
+    expect(options.silent).toBe(true);
+    expect(options.vibrate).toBeUndefined();
   });
 });

@@ -82,7 +82,8 @@ export function createWebPush(deps: {
     if (!current || !deps.sessionAuth(entry.sessionId)) return;
     try {
       await (deps.send ?? webpush.sendNotification)(entry.subscription, JSON.stringify(payload), {
-        TTL: 3600, urgency: "normal", timeout: 10_000,
+        // high asks FCM to wake a backgrounded browser. normal waits until Samsung Internet is open again.
+        TTL: 3600, urgency: "high", timeout: 10_000,
         vapidDetails: { subject: deps.subject, ...load().keys },
       });
     } catch (error) {
@@ -147,7 +148,15 @@ export function createWebPush(deps: {
         if (Date.now() - (testedAt.get(auth.session.id) ?? 0) < 10_000) return json(res, 429, { error: "Wait a few seconds before another test." });
         if (testedAt.size >= 200) testedAt.clear();
         testedAt.set(auth.session.id, Date.now());
-        await deliver(found, { id: `test-${Date.now()}`, title: "OpenMausBot", body: "테스트 알림이 도착했어요.", test: true, silent: !found.sounds });
+        const asked = typeof raw?.delayMs === "number" && Number.isFinite(raw.delayMs) ? Math.floor(raw.delayMs) : 0;
+        const delayMs = Math.min(15_000, Math.max(0, asked));
+        const payload = { id: `test-${Date.now()}`, title: "OpenMausBot", body: "테스트 알림이 도착했어요.", test: true, silent: !found.sounds };
+        if (delayMs > 0) {
+          const scheduled = found;
+          setTimeout(() => { void deliver(scheduled, payload).catch(() => console.warn("Web Push delivery failed; no credentials were logged.")); }, delayMs);
+          return json(res, 200, { ok: true, deliversInMs: delayMs });
+        }
+        await deliver(found, payload);
         return json(res, 200, { ok: true });
       }
       if (!found && data.entries.filter(e => e.sessionId === auth.session.id).length >= 5)

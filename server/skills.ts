@@ -1,3 +1,4 @@
+import { INDEX_MAX_BYTES, loggedIndexOmissions } from "./skill-index-config.ts";
 // Per-bot Agent Skills: imports keep their whole folder and land disabled; learned skills may add reviewed references/<topic>.md files.
 import { createHash, randomUUID } from "node:crypto";
 import {
@@ -48,9 +49,7 @@ export {
 export { STAGED_SKILL_FILE_MAX_BYTES } from "./skill-storage.ts";
 
 export const INDEX_MAX_SKILLS = 30;
-const configuredIndexBytes = Number(process.env.OMB_SKILL_INDEX_BYTES);
-export const INDEX_MAX_BYTES = Number.isInteger(configuredIndexBytes) && configuredIndexBytes >= 4_000 && configuredIndexBytes <= 64_000 ? configuredIndexBytes : 4_000;
-const loggedIndexOmissions = new Map<string, string>();
+export { INDEX_MAX_BYTES } from "./skill-index-config.ts";
 export const MAX_STAGED_SKILLS = 20;
 export const STAGED_GIST_MAX = 240;
 interface SkillManifestEntry {

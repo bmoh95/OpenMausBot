@@ -33,6 +33,17 @@ The completion and sound preferences also apply to push. On iOS, install and
 open the Home Screen app before enabling notifications. OS notification and
 battery settings can delay or block delivery.
 
+If a notification switch appears unresponsive, tap it and read the status shown
+below it. Blocked permission now shows instructions instead of disabling the
+device switch. In Samsung Internet, check the site's notification permission
+under Settings → Sites and downloads (or Sites and notifications) → Notifications,
+and Android Settings → Apps → Samsung Internet → Notifications. Browser menu
+names vary by version. A blocked permission must be changed by the user; the app
+cannot override it. Permission, worker activation and push subscription waits
+time out with an explanation rather than leaving the control busy indefinitely.
+The device notification switch controls completion notices; enable the separate
+background push switch to receive them when the page is closed.
+
 The server encrypts payloads using Web Push and VAPID. No paid API key or
 external account is required; delivery uses the browser vendor's push service.
 The banner contains generic completion/attention text, not conversation text,

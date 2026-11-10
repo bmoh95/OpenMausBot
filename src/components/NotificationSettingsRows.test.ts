@@ -39,6 +39,7 @@ afterEach(async () => {
   container.remove();
   vi.restoreAllMocks();
   vi.unstubAllGlobals();
+  vi.useRealTimers();
 });
 
 const toggle = () => container.querySelector<HTMLButtonElement>('[role="switch"]')!;
@@ -52,7 +53,7 @@ it.each(["visibilitychange", "focus"] as const)("follows a permission changed in
   expect(toggle().getAttribute("aria-checked")).toBe("true");
   permission = "denied";
   await resume(event);
-  expect(toggle().disabled).toBe(true);
+  expect(toggle().disabled).toBe(false);
   expect(toggle().getAttribute("aria-checked")).toBe("false");
   expect(container.textContent).toContain("Notifications are blocked for this site");
   permission = "granted";
@@ -79,7 +80,7 @@ it("asks the browser only from the switch, and turns finished notices on once al
   await resume("focus");
   await act(async () => toggle().click());
   expect(fixture.setFinishedNotifications).not.toHaveBeenCalled();
-  expect(toggle().disabled).toBe(true);
+  expect(toggle().disabled).toBe(false);
 });
 
 it("keeps a muted device muted when permission is granted elsewhere, and toggles without asking once allowed", async () => {
@@ -104,4 +105,27 @@ it("ignores hidden pages and stops listening once unmounted", async () => {
   await resume("visibilitychange");
   await resume("focus");
   expect(readPermission).not.toHaveBeenCalled();
+});
+
+
+it("explains how to unblock notifications when the blocked switch is tapped", async () => {
+  permission = "denied";
+  await mount();
+  await act(async () => toggle().click());
+  expect(requestPermission).not.toHaveBeenCalled();
+  expect(container.querySelector('[role="status"]')?.textContent).toContain("삼성 인터넷");
+  expect(toggle().disabled).toBe(false);
+});
+
+it("shows progress immediately and recovers from a browser permission request that never settles", async () => {
+  vi.useFakeTimers();
+  permission = "default";
+  requestPermission.mockImplementationOnce(() => new Promise(() => {}));
+  await mount();
+  await act(async () => toggle().click());
+  expect(toggle().disabled).toBe(true);
+  expect(container.querySelector('[role="status"]')?.textContent).toContain("요청하고 있어요");
+  await act(async () => vi.advanceTimersByTimeAsync(25_000));
+  expect(toggle().disabled).toBe(false);
+  expect(container.querySelector('[role="status"]')?.textContent).toContain("응답이 없어요");
 });

@@ -25,6 +25,7 @@ const reassignLeadReplies = [
   `Hang should start.\n${envelope({ status: "continue", next: "Hang", instruction: "Draft the summary", detail: "Assigning" })}`,
   `Reassigning to Helper.\n${envelope({ status: "continue", next: "Helper", instruction: "Draft the summary instead", detail: "Reassigned" })}`,
   `Done.\n${envelope({ status: "completed", detail: "Helper drafted the summary." })}`,
+  "VERDICT: PASS\nEVIDENCE: Inspected the fixture summary and confirmed the requested draft.",
 ];
 
 const api = async (method: string, path: string, body?: unknown): Promise<{ status: number; body: any }> => {
@@ -55,6 +56,7 @@ beforeAll(async () => {
     instances: {
       reassignLead: fixture("Reassigning lead", {
         FAKE_CLAUDE_MODE: "happy",
+        FAKE_CLAUDE_TOOL_CALLS: JSON.stringify([{ name: "Read", input: { file_path: "summary.txt" }, ok: true, output: "Here is the summary draft." }]),
         FAKE_CLAUDE_REPLIES: JSON.stringify(reassignLeadReplies),
         FAKE_CLAUDE_REPLY_STATE: join(home, "reassign-lead-replies.txt"),
       }),

@@ -121,7 +121,7 @@ const envelope = (decision: Record<string, string>) =>
 const settled = (replyText: string): GoalStepResult => ({ ran: true, replyText, outcome: "settled", evidence: [{ id: "fixture", tool: "Bash", ok: true, output: "checked result" }] });
 
 /** Drives the real loop with scripted steps; a step that runs counts one turn, as a claimed member turn does. */
-function goalRun(options: { solo?: boolean; members?: Array<{ id: string; name: string }>; steps: Array<GoalStepResult | ((call: number) => GoalStepResult)>; cancelAfter?: number }) {
+function goalRun(options: { busy?: string[]; solo?: boolean; members?: Array<{ id: string; name: string }>; steps: Array<GoalStepResult | ((call: number) => GoalStepResult)>; cancelAfter?: number }) {
   const members = options.members ?? [{ id: "solo-id", name: "Solo" }];
   const run = { goal: "Get every test passing", turnCount: 0, maxTurns: GROUP_GOAL_MAX_TURNS, finished: false };
   const calls: Array<{ bot: string; coordinator: boolean; instructions: string }> = [];
@@ -135,6 +135,7 @@ function goalRun(options: { solo?: boolean; members?: Array<{ id: string; name: 
     solo: options.solo,
     cancelled: () => cancelled,
     current: (id) => members.find((member) => member.id === id),
+    available: (id) => !options.busy?.includes(id),
     step: async (bot, coordinator, instructions) => {
       calls.push({ bot: bot.id, coordinator, instructions });
       const scripted = options.steps[Math.min(calls.length - 1, options.steps.length - 1)]!;
@@ -179,6 +180,19 @@ describe("one goal-run loop for a room and a one-on-one chat", () => {
     await goal.done;
     expect(goal.finished[0]?.status).toBe("completed");
     expect(goal.calls[1]?.instructions).toContain("Blocked review 1 of 2");
+  });
+
+  it("verifies with a free coordinator instead of a teammate busy in another chat", async () => {
+    const goal = goalRun({ members: [{ id: "lead", name: "Lead" }, { id: "busy", name: "Busy" }, { id: "helper", name: "Helper" }], busy: ["busy"], steps: [
+      settled(envelope({ status: "continue", next: "Helper", instruction: "Inspect the export" })),
+      settled("Export inspected."),
+      settled(envelope({ status: "completed", detail: "Export checked." })),
+      settled("VERDICT: PASS\nEVIDENCE: Read the export and checked the total."),
+    ] });
+    await goal.done;
+    expect(goal.calls.map(call => call.bot)).toEqual(["lead", "helper", "lead", "lead"]);
+    expect(goal.calls[3]?.instructions).toContain("Read-only verification only");
+    expect(goal.finished).toEqual([{ status: "completed", detail: "Export checked." }]);
   });
 
   it("does not mark completion when verification fails", async () => {

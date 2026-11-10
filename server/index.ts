@@ -10700,6 +10700,7 @@ async function runGroupGoalOperation(args: {
     members: args.members,
     cancelled: () => args.operation.cancelled,
     current: (botId) => store.bot(botId) ?? undefined,
+    available: (botId) => !botHasActiveTurn(botId),
     step: (bot, coordinator, instructions) => runGroupGoalStep({ ...args, bot, skillAuthoringClaim, coordinator, instructions }),
     finish: (status, detail, text) => finishGroupGoalRun(args.groupId, args.operation, status, detail, text),
     progress: (detail, text) => updateGroupGoalRunProgress(args.operation, detail, text),

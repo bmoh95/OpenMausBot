@@ -2,6 +2,7 @@ import type { Notification } from "../../shared/notification";
 import { plainPreviewText } from "../../shared/plain-preview";
 import { finishedNotificationsEnabled, notificationSoundsEnabled } from "./notification-preferences";
 import { pushEnabled, pushWorker } from "./web-push";
+import { requestNotificationAccess } from "./notification-access";
 
 export type NotifyFrame = Notification;
 
@@ -17,7 +18,7 @@ export function setNotificationPlace(name: string | null) {
 export async function requestNotificationPermission(): Promise<NotificationPermission | null> {
   if (typeof Notification === "undefined") return null;
   try {
-    return Notification.permission === "default" ? await Notification.requestPermission() : Notification.permission;
+    return await requestNotificationAccess();
   } catch {
     return Notification.permission;
   }

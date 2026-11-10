@@ -21,7 +21,7 @@ export function WebPushSettings() {
   return <>
     <SettingRow title="백그라운드 푸시 알림" subtitle="앱을 닫거나 화면을 꺼도 작업 완료·승인·질문 알림을 받아요. 이 기기의 알림 권한이 필요해요.">
       <Switch checked={enabled} disabled={busy} aria-label="백그라운드 푸시 알림" onClick={() => void run(async () => {
-        if (enabled) await disablePush(); else await enablePush();
+        if (enabled) await disablePush(); else await enablePush(setNotice);
         setEnabled(pushEnabled());
       })} />
     </SettingRow>

@@ -44,6 +44,16 @@ time out with an explanation rather than leaving the control busy indefinitely.
 The device notification switch controls completion notices; enable the separate
 background push switch to receive them when the page is closed.
 
+The settings page prepares the Service Worker and VAPID key before a permission
+tap. Background push calls `PushManager.subscribe()` directly in that tap,
+letting the browser handle the permission prompt. It does not wait for a separate
+`Notification.requestPermission()` call first. Samsung Internet's device
+notification switch uses the same subscription permission path, but does not
+register delivery with the server until background push is explicitly enabled.
+An early tap before setup finishes asks for another tap once setup is ready;
+setup never triggers a permission prompt by itself. This follows the
+[browser push subscription flow](https://codelabs.developers.google.com/codelabs/push-notifications#4).
+
 The server encrypts payloads using Web Push and VAPID. No paid API key or
 external account is required; delivery uses the browser vendor's push service.
 The banner contains generic completion/attention text, not conversation text,

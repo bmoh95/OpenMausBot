@@ -31,7 +31,7 @@ export function serveStatic(res: ServerResponse, path: string, staticDir: string
     const data = readFileSync(file);
     const type = MIME[extname(file)] ?? "application/octet-stream";
     // Vite content-hashes every file under /assets/, so those URLs are immutable while public/ has no assets/ dir.
-    const cache = type === "text/html" ? "no-cache" : safe.startsWith("/assets/") ? "public, max-age=31536000, immutable" : null;
+    const cache = type === "text/html" || safe === "/push-sw.js" ? "no-cache" : safe.startsWith("/assets/") ? "public, max-age=31536000, immutable" : null;
     res.writeHead(200, { "content-type": type, ...(type === "text/html" ? PAGE_HEADERS : {}), ...(cache ? { "cache-control": cache } : {}) });
     res.end(data);
     return true;

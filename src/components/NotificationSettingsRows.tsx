@@ -10,11 +10,13 @@ import {
 } from "@/lib/notification-preferences";
 import { requestNotificationPermission } from "@/lib/notify";
 import { SettingRow, Switch } from "./SettingsPrimitives";
+import { WebPushSettings } from "./WebPushSettings";
 
 export function NotificationRows({ simple = false }: { simple?: boolean }) {
   return (
     <>
       <DeviceNotificationsRow simple={simple} />
+      <WebPushSettings />
       <NotificationSoundsRow simple={simple} />
       <NotificationFeedRow simple={simple} />
     </>

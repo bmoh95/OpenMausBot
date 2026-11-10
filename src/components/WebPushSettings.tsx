@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { disablePush, enablePush, pushEnabled, pushSupported, savePushPreferences, testPush } from "@/lib/web-push";
 import { useFinishedNotifications, useNotificationSounds } from "@/lib/notification-preferences";
 import { SettingRow, Switch } from "./SettingsPrimitives";
+import { preparePush } from "@/lib/push-subscription";
 
 export function WebPushSettings() {
   const [enabled, setEnabled] = useState(pushEnabled);
@@ -9,6 +10,12 @@ export function WebPushSettings() {
   const [notice, setNotice] = useState("");
   const sounds = useNotificationSounds();
   const finished = useFinishedNotifications();
+  useEffect(() => {
+    if (!pushSupported() || window.ogb?.desktopNotifications) return;
+    let live = true;
+    void preparePush().catch(error => { if (live) setNotice(error.message); });
+    return () => { live = false; };
+  }, []);
   useEffect(() => {
     if (enabled && pushSupported()) void savePushPreferences().catch(error => setNotice(error.message));
   }, [enabled, sounds, finished]);

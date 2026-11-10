@@ -102,7 +102,8 @@ async function screenCalls(server: AgentsIntegration, count: number): Promise<Ar
  * `steered` says was sent into the turn while it ran. */
 export async function runRoomHandoffAgent(argv: string[], planPath: string, prompt?: unknown,
   launch?: { integration: AgentsIntegration; system: string; evidence?: Record<string, unknown> },
-  progress?: (text: string) => void, steered: () => readonly string[] = () => []): Promise<string> {
+  progress?: (text: string) => void, steered: () => readonly string[] = () => [],
+  readEvidence?: (path: string, content: string) => void): Promise<string> {
   const arg = (flag: string) => argv[argv.indexOf(flag) + 1];
   const mounted = launch ? [] : Object.values(JSON.parse(readAtLaunch(arg("--mcp-config"))).mcpServers as Record<string, AgentsIntegration>);
   // With a tool selection every server sits behind the gate, which names its upstream in OMB_GATE_UPSTREAM.
@@ -230,6 +231,12 @@ export async function runRoomHandoffAgent(argv: string[], planPath: string, prom
         screen = await screenCalls(mounted.computer, plan.screenCalls);
       }
       if (typeof plan.progress === "string") progress?.(plan.progress);
+      if (typeof plan.readEvidence === "string") {
+        const content = readFileSync(plan.readEvidence, "utf8");
+        if (!readEvidence) throw new Error("This fixture engine cannot report file read evidence");
+        readEvidence(plan.readEvidence, content);
+        evidence.push({ file: plan.readEvidence, content });
+      }
       // `writeFiles` { name: content }: files the turn writes in its working folder.
       for (const [name, content] of Object.entries((plan.writeFiles ?? {}) as Record<string, string>)) writeFileSync(join(process.cwd(), name), content);
       if (plan.readyFile) writeFileSync(plan.readyFile, "ready");

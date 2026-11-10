@@ -1,23 +1,24 @@
 self.addEventListener("install", () => self.skipWaiting());
 self.addEventListener("activate", event => event.waitUntil(self.clients.claim()));
 
-async function show(payload) {
-  if (!payload || typeof payload.title !== "string") return;
-  // A background PWA often stays a focused client, so visibility cannot decide whether to show the push.
-  const tag = `omb-push:${payload.id || "notice"}`;
-  const existing = await self.registration.getNotifications({ tag });
-  if (existing.some(notification => notification.tag === tag)) return;
-  await self.registration.showNotification(payload.title.slice(0, 120), {
-    body: String(payload.body || "").slice(0, 300),
-    icon: "/app-icon-192.png", badge: "/app-icon-192.png", tag,
-    silent: payload.silent === true,
-    data: { botId: payload.botId, threadId: payload.threadId },
+function show(payload) {
+  const body = payload && typeof payload === "object" ? payload : {};
+  const title = typeof body.title === "string" && body.title ? body.title : "OpenMausBot";
+  // Show immediately. Samsung's installed app can drop the push if the worker waits
+  // on getNotifications first, while the same subscription still displays in a browser tab.
+  return self.registration.showNotification(title.slice(0, 120), {
+    body: String(body.body || "새 알림이 있어요.").slice(0, 300),
+    icon: "/app-icon-192.png",
+    tag: `omb-push:${body.id || "notice"}`,
+    renotify: true,
+    silent: body.silent === true,
+    data: { botId: body.botId, threadId: body.threadId },
   });
 }
 
 self.addEventListener("push", event => {
-  let payload;
-  try { payload = event.data?.json(); } catch { return; }
+  let payload = {};
+  try { payload = event.data?.json() || {}; } catch { payload = {}; }
   event.waitUntil(show(payload));
 });
 self.addEventListener("message", event => {

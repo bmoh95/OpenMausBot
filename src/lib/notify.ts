@@ -2,6 +2,7 @@ import type { Notification } from "../../shared/notification";
 import { plainPreviewText } from "../../shared/plain-preview";
 import { finishedNotificationsEnabled, notificationSoundsEnabled } from "./notification-preferences";
 import { pushEnabled, pushWorker } from "./web-push";
+import { samsungInternet } from "./push-subscription";
 import { requestNotificationAccess } from "./notification-access";
 
 export type NotifyFrame = Notification;
@@ -33,6 +34,24 @@ export function buildNotificationOptions(bot: NotificationBotIdentity): Notifica
   return { tag: `openmausbot:${bot.id}`, icon: bot.avatarUrl ?? undefined };
 }
 
+function pageBackgrounded(): boolean {
+  try { return document.visibilityState === "hidden" || document.hasFocus() === false; } catch { return false; }
+}
+
+/** Samsung often never runs the push worker after the app leaves the screen, while this page can still be alive. */
+function showSamsungBackgroundNotice(frame: NotifyFrame) {
+  const carried = (frame as NotifyFrame & { id?: unknown }).id;
+  const id = typeof carried === "string" && carried ? carried : `${frame.kind}:${frame.threadId}`;
+  const silent = !notificationSoundsEnabled();
+  void pushWorker().then(registration => registration.showNotification("OpenMausBot", {
+    body: frame.kind === "done" ? "작업이 완료됐어요." : "확인이 필요한 새 알림이 있어요.",
+    icon: "/app-icon-192.png",
+    tag: `omb-push:${id}`,
+    ...(silent ? { silent: true } : {}),
+    data: { botId: frame.botId, threadId: frame.threadId },
+  })).catch(() => {});
+}
+
 export function showNotification(
   frame: NotifyFrame,
   onOpen: (target: NotificationTarget) => void,
@@ -44,7 +63,10 @@ export function showNotification(
   const spend = frame.kind === "spend";
   if (!spend && document.hasFocus() && visibleThreadId === frame.threadId) return;
   if (Notification.permission !== "granted") return;
-  if (pushEnabled()) return;
+  if (pushEnabled()) {
+    if (samsungInternet() && pageBackgrounded()) showSamsungBackgroundNotice(frame);
+    return;
+  }
 
   const title = placeName ? `${placeName} · ${frame.title}` : frame.title;
   // Entries saved before the harness spoke plain text still carry Markdown.

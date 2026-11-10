@@ -238,6 +238,38 @@ describe("notification sounds", () => {
   });
 });
 
+describe("Samsung background delivery", () => {
+  function arm(userAgent: string, hidden: boolean) {
+    const shown = vi.fn().mockResolvedValue(undefined);
+    installNotification("granted");
+    vi.stubGlobal("localStorage", { getItem: (key: string) => key === "omb-web-push-enabled" ? "1" : null, setItem: () => {}, removeItem: () => {} });
+    vi.stubGlobal("document", { hasFocus: () => !hidden, visibilityState: hidden ? "hidden" : "visible" });
+    vi.stubGlobal("navigator", {
+      userAgent,
+      serviceWorker: { register: vi.fn(async () => ({})), ready: Promise.resolve({ showNotification: shown }) },
+    });
+    return shown;
+  }
+
+  it("shows a generic banner while a Samsung page is backgrounded and push is on", async () => {
+    const shown = arm("Mozilla/5.0 SamsungBrowser/31.0", true);
+    showNotification({ ...frame, id: "n1" } as NotifyFrame, vi.fn());
+    await vi.waitFor(() => expect(shown).toHaveBeenCalledTimes(1));
+    expect(shown).toHaveBeenCalledWith("OpenMausBot", expect.objectContaining({ body: "작업이 완료됐어요.", tag: "omb-push:n1" }));
+    expect(JSON.stringify(shown.mock.calls[0])).not.toContain("All done");
+  });
+
+  it("leaves a visible Samsung page and other browsers to the push worker", async () => {
+    const visible = arm("Mozilla/5.0 SamsungBrowser/31.0", false);
+    showNotification(frame, vi.fn());
+    const chrome = arm("Mozilla/5.0 Chrome/156.0.0.0", true);
+    showNotification(frame, vi.fn());
+    await new Promise(resolve => setTimeout(resolve, 20));
+    expect(visible).not.toHaveBeenCalled();
+    expect(chrome).not.toHaveBeenCalled();
+  });
+});
+
 describe("buildNotificationOptions", () => {
   it("keys coalescing on botId and omits a missing avatar", () => {
     expect(buildNotificationOptions({ id: "bot-9" })).toEqual({

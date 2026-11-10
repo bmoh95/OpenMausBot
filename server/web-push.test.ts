@@ -70,7 +70,9 @@ describe("paired browser push", () => {
     expect(payload).not.toContain("private conversation");
     expect(payload).not.toContain("private title");
     const encrypted = webpush.generateRequestDetails(target, payload, options);
+    expect(options).toMatchObject({ urgency: "high", TTL: 3600 });
     expect(encrypted.headers["Content-Encoding"]).toBe("aes128gcm");
+    expect(encrypted.headers.Urgency).toBe("high");
     expect(Buffer.isBuffer(encrypted.body)).toBe(true);
     expect(encrypted.headers.Authorization).toBeTruthy();
   });
@@ -102,5 +104,15 @@ describe("paired browser push", () => {
     f.push.publish(notice); f.push.publish(notice);
     await vi.waitFor(() => expect(f.send).toHaveBeenCalledTimes(1));
     await vi.waitFor(() => expect(JSON.parse(readFileSync(join(f.dataDir, "web-push.json"), "utf8")).entries).toHaveLength(0));
+  });
+  it("can send the test after the phone has time to leave the app", async () => {
+    const f = await fixture(), subscription = sub();
+    expect((await f.request("/subscription", "POST", { subscription })).status).toBe(200);
+    const response = await f.request("/test", "POST", { subscription, delayMs: 30 });
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({ ok: true, deliversInMs: 30 });
+    expect(f.send).not.toHaveBeenCalled();
+    await vi.waitFor(() => expect(f.send).toHaveBeenCalledTimes(1));
+    expect(f.send.mock.calls[0]?.[2]).toMatchObject({ urgency: "high" });
   });
 });

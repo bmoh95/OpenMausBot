@@ -4,16 +4,19 @@ self.addEventListener("activate", event => event.waitUntil(self.clients.claim())
 function show(payload) {
   const body = payload && typeof payload === "object" ? payload : {};
   const title = typeof body.title === "string" && body.title ? body.title : "OpenMausBot";
-  // Show immediately. Samsung's installed app can drop the push if the worker waits
-  // on getNotifications first, while the same subscription still displays in a browser tab.
-  return self.registration.showNotification(title.slice(0, 120), {
+  const silent = body.silent === true;
+  // Show immediately. A vibration pattern is what makes Samsung post a heads-up
+  // after the app has left the screen; silent and vibrate together are rejected.
+  const options = {
     body: String(body.body || "새 알림이 있어요.").slice(0, 300),
     icon: "/app-icon-192.png",
     tag: `omb-push:${body.id || "notice"}`,
     renotify: true,
-    silent: body.silent === true,
+    silent,
     data: { botId: body.botId, threadId: body.threadId },
-  });
+  };
+  if (!silent) options.vibrate = [180, 80, 180];
+  return self.registration.showNotification(title.slice(0, 120), options);
 }
 
 self.addEventListener("push", event => {

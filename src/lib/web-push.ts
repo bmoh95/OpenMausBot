@@ -1,7 +1,7 @@
 import { api } from "../state/api";
 import { BLOCKED_NOTIFICATION_HELP } from "./notification-access";
 import { finishedNotificationsEnabled, notificationSoundsEnabled } from "./notification-preferences";
-import { subscribePreparedPush, pushWorker } from "./push-subscription";
+import { samsungInternet, subscribePreparedPush, pushWorker } from "./push-subscription";
 export { pushSupported, pushWorker } from "./push-subscription";
 
 const PUSH_ENABLED = "omb-web-push-enabled";
@@ -40,8 +40,11 @@ export async function disablePush() {
   }
   localStorage.removeItem(PUSH_ENABLED);
 }
-export async function testPush() {
+export async function testPush(): Promise<{ deliversInMs: number }> {
   const subscription = await (await pushWorker()).pushManager.getSubscription();
   if (!subscription) throw new Error("먼저 백그라운드 알림을 켜 주세요.");
-  await api("/api/web-push/test", { method: "POST", body: JSON.stringify({ subscription: wire(subscription) }), timeoutMs: 15_000 });
+  // Leave a gap so Samsung can be backgrounded before FCM is asked to wake it.
+  const delayMs = samsungInternet() ? 8_000 : 0;
+  await api("/api/web-push/test", { method: "POST", body: JSON.stringify({ subscription: wire(subscription), ...(delayMs ? { delayMs } : {}) }), timeoutMs: 15_000 });
+  return { deliversInMs: delayMs };
 }

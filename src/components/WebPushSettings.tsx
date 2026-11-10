@@ -33,7 +33,10 @@ export function WebPushSettings() {
       })} />
     </SettingRow>
     {enabled && <button type="button" disabled={busy} onClick={() => void run(async () => {
-      await testPush(); setNotice("테스트 알림을 전송했어요. 기기의 알림을 확인해 주세요.");
+      const sent = await testPush();
+      setNotice(sent.deliversInMs
+        ? "8초 뒤에 테스트 알림을 보냅니다. 지금 홈으로 나가 주세요."
+        : "테스트 알림을 전송했어요. 기기의 알림을 확인해 주세요.");
     })} className="rounded-lg bg-control px-3 py-2 text-[13px] disabled:opacity-40">테스트 알림 보내기</button>}
     {notice && <p role="status" className="mt-2 text-[12px] text-ink-secondary">{notice}</p>}
   </>;

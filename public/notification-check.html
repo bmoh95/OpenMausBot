@@ -13,32 +13,69 @@
 <h1>MausBot 알림 권한 점검</h1>
 <p>같은 사이트에서 브라우저 권한 요청만 직접 시험합니다. 대화·Bot 설정·로그인 정보는 읽거나 변경하지 않습니다.</p>
 <button id="request" type="button">알림 권한 직접 요청</button>
+<button id="subscribe" type="button">푸시 구독 단계 확인</button>
 <button id="refresh" type="button">상태 새로고침</button>
 <p id="result" role="status">아래 현재 권한을 확인하고 직접 요청 버튼을 눌러 주세요.</p>
 <pre id="status" aria-label="현재 알림 권한 상태"></pre>
-<p>여기서는 허용 창이 뜨는데 앱 설정에서는 안 뜨는지, 아니면 여기에서도 뜨지 않는지 확인해 주세요. 권한이 이미 granted라면 허용 창이 다시 뜨지 않는 것이 정상입니다.</p>
+<p>알림 권한과 푸시 구독은 별개입니다. 권한이 이미 granted라면 허용 창이 다시 뜨지 않는 것이 정상입니다. 그때는 두 번째 버튼으로 구독 단계만 확인하세요. 구독 주소 전체는 표시하지 않습니다.</p>
 <script>
   const result = document.querySelector('#result');
   const status = document.querySelector('#status');
   const request = document.querySelector('#request');
+  const subscribeButton = document.querySelector('#subscribe');
   let attempt = 0;
   let lastGesture = null;
+  let push = { step: 'idle' };
+  let prepared = null;
+  let preparing = null;
+  function permissionValue() {
+    return typeof Notification === 'undefined' ? 'unsupported' : Notification.permission;
+  }
   function refresh() {
     status.textContent = JSON.stringify({
-      check: 'maus-native-permission-v1',
+      check: 'maus-native-permission-v2',
       origin: location.origin,
-      permission: typeof Notification === 'undefined' ? 'unsupported' : Notification.permission,
+      permission: permissionValue(),
       secureContext: isSecureContext,
       topLevel: window.top === window,
       focused: document.hasFocus(),
       visible: document.visibilityState,
       samsungVersion: navigator.userAgent.match(/SamsungBrowser\/([\d.]+)/)?.[1] ?? null,
       lastClick: lastGesture,
+      push,
     }, null, 2);
+  }
+  function noteGesture(event) {
+    lastGesture = { trusted: event.isTrusted, active: navigator.userActivation?.isActive ?? null };
+  }
+  function decodeKey(publicKey) {
+    const padded = publicKey.replace(/-/g, '+').replace(/_/g, '/');
+    return Uint8Array.from(atob(padded), char => char.charCodeAt(0));
+  }
+  function endpointHost(endpoint) {
+    try { return new URL(endpoint).host; } catch { return null; }
+  }
+  function prepare() {
+    if (prepared) return Promise.resolve(prepared);
+    if (!preparing) preparing = (async () => {
+      push = { step: 'preparing' };
+      refresh();
+      const response = await fetch('/api/web-push/key', { credentials: 'include', cache: 'no-store' });
+      if (!response.ok) throw new Error('key HTTP ' + response.status);
+      const body = await response.json();
+      if (typeof body.publicKey !== 'string' || !body.publicKey) throw new Error('key missing');
+      const registration = await navigator.serviceWorker.register('/push-sw.js', { scope: '/', updateViaCache: 'none' });
+      const ready = await navigator.serviceWorker.ready;
+      const existing = await ready.pushManager.getSubscription();
+      prepared = { registration: ready || registration, key: decodeKey(body.publicKey), existing };
+      push = { step: existing ? 'existing' : 'ready', endpointHost: existing ? endpointHost(existing.endpoint) : null, worker: !!ready.active };
+      return prepared;
+    })().catch(error => { preparing = null; throw error; });
+    return preparing;
   }
   request.addEventListener('click', event => {
     const current = ++attempt;
-    lastGesture = { trusted: event.isTrusted, active: navigator.userActivation?.isActive ?? null };
+    noteGesture(event);
     refresh();
     if (typeof Notification === 'undefined') {
       result.textContent = '이 환경에는 알림 API가 없습니다.';
@@ -46,7 +83,7 @@
     }
     if (Notification.permission !== 'default') {
       result.textContent = Notification.permission === 'granted'
-        ? '이 사이트의 알림 권한은 이미 허용됐습니다. 허용 창은 다시 뜨지 않습니다. 앱에서 멈춘다면 다음 푸시 구독 단계를 확인해야 합니다.'
+        ? '이 사이트의 알림 권한은 이미 허용됐습니다. 허용 창은 다시 뜨지 않습니다. 푸시 구독 단계 확인을 눌러 주세요.'
         : '이 사이트의 알림 권한이 denied입니다. 사이트 권한 설정에서 허용해야 다시 요청할 수 있습니다.';
       return;
     }
@@ -62,7 +99,7 @@
     request.disabled = true;
     const timer = setTimeout(() => {
       if (current !== attempt) return;
-      result.textContent = '직접 요청도 15초 동안 응답하지 않았습니다. 이 페이지는 React·푸시 구독·서버 키 조회를 기다리지 않습니다. 현재 권한과 lastClick 상태를 알려 주세요.';
+      result.textContent = '직접 요청도 15초 동안 응답하지 않았습니다. 이 버튼은 푸시 구독이나 서버 키를 기다리지 않습니다. 아래 JSON을 알려 주세요.';
       request.disabled = false;
       refresh();
     }, 15_000);
@@ -75,6 +112,82 @@
     }).finally(() => {
       clearTimeout(timer);
       if (current === attempt) { request.disabled = false; refresh(); }
+    });
+  });
+  subscribeButton.addEventListener('click', event => {
+    const current = ++attempt;
+    noteGesture(event);
+    if (!('serviceWorker' in navigator) || typeof PushManager === 'undefined') {
+      push = { step: 'unsupported' };
+      result.textContent = '이 브라우저는 푸시 구독을 지원하지 않습니다.';
+      refresh();
+      return;
+    }
+    if (permissionValue() !== 'granted') {
+      push = { step: 'needs-permission', permission: permissionValue() };
+      result.textContent = '푸시 구독은 시작하지 않았습니다. 알림 권한이 아직 granted가 아닙니다. 먼저 알림 권한 직접 요청을 눌러 주세요.';
+      refresh();
+      return;
+    }
+    if (!prepared) {
+      result.textContent = '서비스 워커와 서버 키를 준비합니다. 준비된 뒤 이 버튼을 한 번 더 눌러 구독을 시작하세요.';
+      subscribeButton.disabled = true;
+      const timed = new Promise((resolve, reject) => {
+        const timer = setTimeout(() => reject(new Error('prepare timeout')), 20_000);
+        prepare().then(value => { clearTimeout(timer); resolve(value); }, error => { clearTimeout(timer); reject(error); });
+      });
+      timed.then(() => {
+        if (current !== attempt) return;
+        result.textContent = prepared.existing
+          ? '이미 푸시 구독이 있습니다. 새로 구독하지 않았습니다. 아래 JSON의 push.endpointHost를 알려 주세요.'
+          : '준비가 끝났습니다. 푸시 구독 단계 확인을 한 번 더 눌러 주세요.';
+      }, error => {
+        if (current !== attempt) return;
+        push = { step: 'prepare-failed', error: (error?.name ?? 'Error') + ': ' + String(error?.message ?? error) };
+        result.textContent = '푸시 준비 실패: ' + push.error;
+      }).finally(() => {
+        if (current === attempt) { subscribeButton.disabled = false; refresh(); }
+      });
+      return;
+    }
+    if (prepared.existing) {
+      push = { step: 'existing', endpointHost: endpointHost(prepared.existing.endpoint), worker: !!prepared.registration.active };
+      result.textContent = '이미 푸시 구독이 있어 다시 구독하지 않았습니다. 아래 JSON을 알려 주세요.';
+      refresh();
+      return;
+    }
+    result.textContent = '푸시 구독을 요청했습니다. 권한 창이 아니라 구독 응답을 기다립니다.';
+    let pending;
+    try {
+      pending = prepared.registration.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: prepared.key });
+    } catch (error) {
+      push = { step: 'subscribe-threw', error: (error?.name ?? 'Error') + ': ' + String(error?.message ?? error) };
+      result.textContent = '구독 호출 오류: ' + push.error;
+      refresh();
+      return;
+    }
+    subscribeButton.disabled = true;
+    push = { step: 'subscribing' };
+    refresh();
+    const timer = setTimeout(() => {
+      if (current !== attempt) return;
+      push = { step: 'subscribe-timeout' };
+      result.textContent = '푸시 구독이 20초 동안 응답하지 않았습니다. 알림 권한은 허용된 상태이고, 멈춘 곳은 구독 단계입니다. 아래 JSON을 알려 주세요.';
+      subscribeButton.disabled = false;
+      refresh();
+    }, 20_000);
+    Promise.resolve(pending).then(subscription => {
+      if (current !== attempt) return;
+      prepared.existing = subscription;
+      push = { step: 'subscribed', endpointHost: endpointHost(subscription.endpoint) };
+      result.textContent = '푸시 구독에 성공했습니다. 앱 설정의 백그라운드 푸시 알림에서 서버 저장과 테스트 알림을 이어서 확인하세요.';
+    }, error => {
+      if (current !== attempt) return;
+      push = { step: 'subscribe-failed', error: (error?.name ?? 'Error') + ': ' + String(error?.message ?? error) };
+      result.textContent = '푸시 구독 오류: ' + push.error;
+    }).finally(() => {
+      clearTimeout(timer);
+      if (current === attempt) { subscribeButton.disabled = false; refresh(); }
     });
   });
   document.querySelector('#refresh').addEventListener('click', refresh);

@@ -117,6 +117,34 @@ it("explains how to unblock notifications when the blocked switch is tapped", as
   expect(toggle().disabled).toBe(false);
 });
 
+it("uses a permission granted on another page without asking again", async () => {
+  permission = "default";
+  fixture.optedIn = false;
+  await mount();
+  permission = "granted";
+  await act(async () => toggle().click());
+  expect(requestPermission).not.toHaveBeenCalled();
+  expect(fixture.setFinishedNotifications).toHaveBeenCalledWith(true);
+});
+
+it("asks Samsung Internet with the native permission call, not a push subscription", async () => {
+  permission = "default";
+  fixture.optedIn = false;
+  const originalAgent = navigator.userAgent;
+  Object.defineProperty(navigator, "userAgent", { configurable: true, value: "Mozilla/5.0 SamsungBrowser/31.0" });
+  Object.defineProperty(window, "isSecureContext", { configurable: true, value: true });
+  Object.defineProperty(window, "PushManager", { configurable: true, value: class PushManager {} });
+  Object.defineProperty(navigator, "serviceWorker", { configurable: true, value: { register: vi.fn(), ready: new Promise(() => {}) } });
+  try {
+    await mount();
+    await act(async () => toggle().click());
+    expect(requestPermission).toHaveBeenCalledOnce();
+    expect(container.textContent).not.toContain("푸시 구독");
+  } finally {
+    Object.defineProperty(navigator, "userAgent", { configurable: true, value: originalAgent });
+  }
+});
+
 it("shows progress immediately and recovers from a browser permission request that never settles", async () => {
   vi.useFakeTimers();
   permission = "default";

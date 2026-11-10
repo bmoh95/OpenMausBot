@@ -1,4 +1,5 @@
 import { api } from "../state/api";
+import { BLOCKED_NOTIFICATION_HELP } from "./notification-access";
 import { finishedNotificationsEnabled, notificationSoundsEnabled } from "./notification-preferences";
 import { subscribePreparedPush, pushWorker } from "./push-subscription";
 export { pushSupported, pushWorker } from "./push-subscription";
@@ -19,8 +20,11 @@ export async function savePushPreferences(current?: PushSubscription) {
   }), timeoutMs: 15_000 });
 }
 export async function enablePush(progress: (message: string) => void = () => {}) {
+  if (typeof Notification === "undefined") throw new Error("이 브라우저는 알림을 지원하지 않아요.");
+  if (Notification.permission === "denied") throw new Error(BLOCKED_NOTIFICATION_HELP);
+  if (Notification.permission !== "granted") throw new Error("먼저 위의 기기 알림을 켜 주세요. 권한 요청과 푸시 구독은 따로 진행합니다.");
   const pending = subscribePreparedPush();
-  progress("브라우저의 푸시 알림 허용 창을 확인해 주세요. 허용 후 구독을 연결합니다…");
+  progress("푸시 구독을 연결하고 있어요. 알림 권한은 이미 허용되어 있어 권한 창은 다시 뜨지 않습니다.");
   const subscription = await pending;
   progress("푸시 구독을 서버에 저장하고 있어요…");
   await savePushPreferences(subscription);

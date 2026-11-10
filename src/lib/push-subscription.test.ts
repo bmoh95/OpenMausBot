@@ -27,29 +27,40 @@ it("prepares the worker and key without prompting, then subscribes synchronously
   const push = await import("./push-subscription");
   await push.preparePush();
   expect(subscribe).not.toHaveBeenCalled();
+  permission = "granted";
   const result = push.subscribePreparedPush();
   expect(subscribe).toHaveBeenCalledWith({ userVisibleOnly: true, applicationServerKey: key });
   expect(Notification.requestPermission).not.toHaveBeenCalled();
   expect((await result).endpoint).toContain("/fixture");
 });
 
-it("allows Samsung device permission through subscribe even when requestPermission would hang", async () => {
+it("does not use push subscription to request a permission that is still undecided", async () => {
   const push = await import("./push-subscription");
   expect(push.samsungInternet()).toBe(true);
   await push.preparePush();
-  const result = push.requestPreparedPushPermission();
-  expect(subscribe).toHaveBeenCalledOnce();
-  expect(await result).toBe("granted");
+  await expect(push.subscribePreparedPush()).rejects.toThrow("따로 진행");
+  expect(subscribe).not.toHaveBeenCalled();
   expect(Notification.requestPermission).not.toHaveBeenCalled();
 });
 
 it("requires a new tap after preparation instead of losing user activation across an await", async () => {
   const push = await import("./push-subscription");
+  permission = "granted";
   await expect(push.subscribePreparedPush()).rejects.toThrow("다시 눌러");
   expect(subscribe).not.toHaveBeenCalled();
   await push.preparePush();
   await push.subscribePreparedPush();
   expect(subscribe).toHaveBeenCalledOnce();
+});
+
+it("reuses a matching subscription without asking the push service again", async () => {
+  const current = { endpoint: "https://fcm.googleapis.com/existing", options: { applicationServerKey: key.buffer } };
+  getSubscription.mockResolvedValue(current);
+  permission = "granted";
+  const push = await import("./push-subscription");
+  await push.preparePush();
+  await expect(push.subscribePreparedPush()).resolves.toBe(current);
+  expect(subscribe).not.toHaveBeenCalled();
 });
 
 it("shows blocked permission help without trying to override a browser denial", async () => {
@@ -64,6 +75,7 @@ it("clears a failed preparation so a later retry can succeed", async () => {
   const push = await import("./push-subscription");
   await expect(push.preparePush()).rejects.toThrow("key unavailable");
   await push.preparePush();
+  permission = "granted";
   await push.subscribePreparedPush();
   expect(subscribe).toHaveBeenCalledOnce();
 });
@@ -81,8 +93,9 @@ it("times out an unresponsive push service and preserves browser denial errors",
   vi.useFakeTimers();
   const push = await import("./push-subscription");
   await push.preparePush();
+  permission = "granted";
   subscribe.mockImplementationOnce(() => new Promise(() => {}));
-  const pending = expect(push.subscribePreparedPush()).rejects.toThrow("푸시 권한 요청이 응답하지");
+  const pending = expect(push.subscribePreparedPush()).rejects.toThrow("푸시 구독 연결이 응답하지");
   await vi.advanceTimersByTimeAsync(25_000);
   await pending;
   subscribe.mockRejectedValueOnce(new DOMException("blocked", "NotAllowedError"));

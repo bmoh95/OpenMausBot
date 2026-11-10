@@ -6,7 +6,7 @@ import { createECDH, randomBytes } from "node:crypto";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import webpush from "web-push";
 import { z } from "zod";
-import { allowedPushEndpoint, createWebPush } from "./web-push.ts";
+import { allowedPushEndpoint, createWebPush, pushTestDelay } from "./web-push.ts";
 import { notificationListedFor } from "./routes/notifications.ts";
 import { dispatchRoutes } from "./routes/table.ts";
 import { json, readBody } from "./harness/http.ts";
@@ -50,6 +50,12 @@ async function fixture() {
   return { push, deps, send, request, dataDir, live, viewer: (a: RequestAuth) => { viewer = a; }, visible: (v: boolean) => { visible = v; } };
 }
 describe("paired browser push", () => {
+  it("waits eight seconds for a Samsung test even when the page sent no delay", () => {
+    expect(pushTestDelay("Mozilla/5.0 SamsungBrowser/31.0", undefined)).toBe(8_000);
+    expect(pushTestDelay("Mozilla/5.0 Chrome/156.0.0.0", undefined)).toBe(0);
+    expect(pushTestDelay("Mozilla/5.0 Chrome/156.0.0.0", "30")).toBe(30);
+    expect(pushTestDelay(undefined, 20_000)).toBe(15_000);
+  });
   it("rejects arbitrary URLs and private destinations", () => {
     for (const url of ["http://fcm.googleapis.com/x", "https://127.0.0.1/x", "https://fcm.googleapis.com.evil.test/x", "https://fcm.googleapis.com:8443/x", "https://user@fcm.googleapis.com/x"]) expect(allowedPushEndpoint(url)).toBe(false);
     for (const url of ["https://fcm.googleapis.com/x", "https://updates.push.services.mozilla.com/wpush/v2/x", "https://web.push.apple.com/Q/x", "https://a.notify.windows.com/x"]) expect(allowedPushEndpoint(url)).toBe(true);

@@ -41,10 +41,17 @@ export async function disablePush() {
   localStorage.removeItem(PUSH_ENABLED);
 }
 export async function testPush(): Promise<{ deliversInMs: number }> {
-  const subscription = await (await pushWorker()).pushManager.getSubscription();
+  const registration = await pushWorker();
+  const subscription = await registration.pushManager.getSubscription();
   if (!subscription) throw new Error("먼저 백그라운드 알림을 켜 주세요.");
-  // Leave a gap so Samsung can be backgrounded before FCM is asked to wake it.
+  // The server also waits when it sees Samsung Internet. This timer covers the case where the page is still alive in the background.
   const delayMs = samsungInternet() ? 8_000 : 0;
-  await api("/api/web-push/test", { method: "POST", body: JSON.stringify({ subscription: wire(subscription), ...(delayMs ? { delayMs } : {}) }), timeoutMs: 15_000 });
+  const id = `test-${Date.now()}`;
+  if (delayMs) window.setTimeout(() => {
+    void registration.showNotification("OpenMausBot", {
+      body: "테스트 알림이 도착했어요.", icon: "/app-icon-192.png", tag: `omb-push:${id}`, data: {},
+    }).catch(() => {});
+  }, delayMs);
+  await api("/api/web-push/test", { method: "POST", body: JSON.stringify({ subscription: wire(subscription), id, ...(delayMs ? { delayMs } : {}) }), timeoutMs: 15_000 });
   return { deliversInMs: delayMs };
 }

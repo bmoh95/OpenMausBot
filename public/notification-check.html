@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="ko">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="referrer" content="no-referrer">
+<title>MausBot 알림 권한 점검</title>
+<style>
+  :root { color-scheme: light dark; font: 16px/1.6 system-ui, sans-serif; }
+  body { max-width: 42rem; margin: 0 auto; padding: 24px 18px; }
+  button { font: inherit; padding: 12px 18px; margin: 8px 8px 8px 0; cursor: pointer; }
+  pre { white-space: pre-wrap; overflow-wrap: anywhere; padding: 14px; border: 1px solid #888; border-radius: 8px; }
+</style>
+<h1>MausBot 알림 권한 점검</h1>
+<p>같은 사이트에서 브라우저 권한 요청만 직접 시험합니다. 대화·Bot 설정·로그인 정보는 읽거나 변경하지 않습니다.</p>
+<button id="request" type="button">알림 권한 직접 요청</button>
+<button id="refresh" type="button">상태 새로고침</button>
+<p id="result" role="status">아래 현재 권한을 확인하고 직접 요청 버튼을 눌러 주세요.</p>
+<pre id="status" aria-label="현재 알림 권한 상태"></pre>
+<p>여기서는 허용 창이 뜨는데 앱 설정에서는 안 뜨는지, 아니면 여기에서도 뜨지 않는지 확인해 주세요. 권한이 이미 granted라면 허용 창이 다시 뜨지 않는 것이 정상입니다.</p>
+<script>
+  const result = document.querySelector('#result');
+  const status = document.querySelector('#status');
+  const request = document.querySelector('#request');
+  let attempt = 0;
+  let lastGesture = null;
+  function refresh() {
+    status.textContent = JSON.stringify({
+      check: 'maus-native-permission-v1',
+      origin: location.origin,
+      permission: typeof Notification === 'undefined' ? 'unsupported' : Notification.permission,
+      secureContext: isSecureContext,
+      topLevel: window.top === window,
+      focused: document.hasFocus(),
+      visible: document.visibilityState,
+      samsungVersion: navigator.userAgent.match(/SamsungBrowser\/([\d.]+)/)?.[1] ?? null,
+      lastClick: lastGesture,
+    }, null, 2);
+  }
+  request.addEventListener('click', event => {
+    const current = ++attempt;
+    lastGesture = { trusted: event.isTrusted, active: navigator.userActivation?.isActive ?? null };
+    refresh();
+    if (typeof Notification === 'undefined') {
+      result.textContent = '이 환경에는 알림 API가 없습니다.';
+      return;
+    }
+    if (Notification.permission !== 'default') {
+      result.textContent = Notification.permission === 'granted'
+        ? '이 사이트의 알림 권한은 이미 허용됐습니다. 허용 창은 다시 뜨지 않습니다. 앱에서 멈춘다면 다음 푸시 구독 단계를 확인해야 합니다.'
+        : '이 사이트의 알림 권한이 denied입니다. 사이트 권한 설정에서 허용해야 다시 요청할 수 있습니다.';
+      return;
+    }
+    result.textContent = '브라우저에 직접 요청했습니다. 허용 창이 나타나는지 확인해 주세요.';
+    let pending;
+    try {
+      pending = Notification.requestPermission();
+    } catch (error) {
+      result.textContent = '직접 요청 오류: ' + (error?.name ?? 'Error') + ': ' + String(error?.message ?? error);
+      refresh();
+      return;
+    }
+    request.disabled = true;
+    const timer = setTimeout(() => {
+      if (current !== attempt) return;
+      result.textContent = '직접 요청도 15초 동안 응답하지 않았습니다. 이 페이지는 React·푸시 구독·서버 키 조회를 기다리지 않습니다. 현재 권한과 lastClick 상태를 알려 주세요.';
+      request.disabled = false;
+      refresh();
+    }, 15_000);
+    Promise.resolve(pending).then(permission => {
+      if (current !== attempt) return;
+      result.textContent = '브라우저 응답: ' + String(permission);
+    }, error => {
+      if (current !== attempt) return;
+      result.textContent = '브라우저 오류: ' + (error?.name ?? 'Error') + ': ' + String(error?.message ?? error);
+    }).finally(() => {
+      clearTimeout(timer);
+      if (current === attempt) { request.disabled = false; refresh(); }
+    });
+  });
+  document.querySelector('#refresh').addEventListener('click', refresh);
+  window.addEventListener('focus', refresh);
+  document.addEventListener('visibilitychange', refresh);
+  refresh();
+</script>
+</html>

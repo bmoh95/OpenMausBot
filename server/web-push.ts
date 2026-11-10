@@ -11,6 +11,14 @@ import type { NotificationListed } from "./routes/notifications.ts";
 import { PASS, type RouteHandler } from "./routes/table.ts";
 
 const providers = ["fcm.googleapis.com", "updates.push.services.mozilla.com", "push.services.mozilla.com", "web.push.apple.com", "wns.windows.com", "notify.windows.com"];
+
+/** Samsung Internet drops a push that arrives while the page is still open, and the page's own delay did not survive the request. */
+export function pushTestDelay(userAgent: string | undefined, asked: unknown): number {
+  const samsung = /SamsungBrowser\//i.test(userAgent ?? "") ? 8_000 : 0;
+  const fromBody = typeof asked === "number" && Number.isFinite(asked) ? Math.floor(asked)
+    : typeof asked === "string" && /^\d+$/.test(asked) ? Number(asked) : 0;
+  return Math.min(15_000, Math.max(0, samsung, fromBody));
+}
 export function allowedPushEndpoint(value: string): boolean {
   try {
     const u = new URL(value);
@@ -148,9 +156,10 @@ export function createWebPush(deps: {
         if (Date.now() - (testedAt.get(auth.session.id) ?? 0) < 10_000) return json(res, 429, { error: "Wait a few seconds before another test." });
         if (testedAt.size >= 200) testedAt.clear();
         testedAt.set(auth.session.id, Date.now());
-        const asked = typeof raw?.delayMs === "number" && Number.isFinite(raw.delayMs) ? Math.floor(raw.delayMs) : 0;
-        const delayMs = Math.min(15_000, Math.max(0, asked));
-        const payload = { id: `test-${Date.now()}`, title: "OpenMausBot", body: "테스트 알림이 도착했어요.", test: true, silent: !found.sounds };
+        const ua = Array.isArray(req.headers["user-agent"]) ? req.headers["user-agent"].join(" ") : req.headers["user-agent"];
+        const delayMs = pushTestDelay(ua, raw?.delayMs);
+        const id = typeof raw?.id === "string" && /^test-\d{10,16}$/.test(raw.id) ? raw.id : `test-${Date.now()}`;
+        const payload = { id, title: "OpenMausBot", body: "테스트 알림이 도착했어요.", test: true, silent: !found.sounds };
         if (delayMs > 0) {
           const scheduled = found;
           setTimeout(() => { void deliver(scheduled, payload).catch(() => console.warn("Web Push delivery failed; no credentials were logged.")); }, delayMs);

@@ -196,6 +196,7 @@ export interface GoalRunDeps<Bot extends GoalRunMember> {
   cancelled(): boolean;
   /** The member as the store has it now. */
   current(botId: string): Bot | undefined;
+  available?(botId: string): boolean;
   /** One member turn; a step counts against the run's turns once its member is claimed. */
   step(bot: Bot, coordinator: boolean, instructions: string): Promise<GoalStepResult>;
   finish(status: GoalRunEnd, detail: string, text?: ServerText): void;
@@ -300,7 +301,8 @@ export async function runGoalRun<Bot extends GoalRunMember>(deps: GoalRunDeps<Bo
         deps.finish("limit-reached", "작업 완료 검증에 필요한 턴이 남지 않았습니다. 같은 대화에서 목표를 이어서 검증해 주세요.");
         return;
       }
-      const verifier = deps.solo ? coordinator : (goalMembers.find((m) => !m.hidden && m.id !== coordinator.id && m.id !== lastWorkerId) ?? goalMembers.find((m) => !m.hidden && m.id !== lastWorkerId) ?? coordinator);
+      const candidates = goalMembers.filter(m => !m.hidden && deps.current(m.id) && (deps.available?.(m.id) ?? true));
+      const verifier = deps.solo ? coordinator : (candidates.find(m => m.id !== coordinator.id && m.id !== lastWorkerId) ?? candidates.find(m => m.id !== lastWorkerId) ?? candidates[0]);
       const verifierBot = verifier && deps.current(verifier.id);
       if (!verifierBot || verifierBot.hidden) {
         deps.finish("blocked", "완료를 확인할 검증 봇이 없습니다. 작업 결과를 확인한 뒤 이어서 진행해 주세요.");

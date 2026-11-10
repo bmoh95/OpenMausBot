@@ -526,8 +526,11 @@ it("R7 does not rerun a cut goal step after a restart: its run ended with the re
 it("R7 a goal step the watchdog stops after it posted a credential card fails as stalled and stops the card", () => scenario(async (f) => {
   const mira = await f.bot("Mira", "Engineering");
   const room = await f.room("Engineering", [f.clive.id, mira.id], { kind: "member", botId: f.clive.id });
-  f.script(f.clive.id, { key: "C-STEP", match: ["R7S-GOAL"], steps: [{ tool: "request_credential", arguments: { credential_id: "xaiApiKey", reason: "R7S fixture model" } }],
-    gateFile: f.gate("step"), reply: "R7S-LATE: never shown." });
+  f.script(f.clive.id,
+    { key: "C-STEP", match: ["R7S-GOAL"], steps: [{ tool: "request_credential", arguments: { credential_id: "xaiApiKey", reason: "R7S fixture model" } }],
+      gateFile: f.gate("step"), reply: "R7S-LATE: never shown." },
+    { key: "C-AFTER-STALL", match: ["R7S-GOAL"], repeat: true,
+      reply: '<openmaus-goal>{"status":"needs-input","detail":"The credential request stopped; the user must supply the required key."}</openmaus-goal>' });
   await f.post(room, "R7S-GOAL: set up the Grok model; ask me for the key you need.", { mode: "goal" });
   const messages = (): Promise<Array<{ id: string; kind: string; secret?: { stopped?: boolean }; goalRun?: { status: string } }>> => f.messages(room.threadId);
   await expect.poll(async () => (await messages()).find((message) => message.kind === "secret")?.id, { timeout: 30_000 }).toBeTruthy();
@@ -539,9 +542,8 @@ it("R7 a goal step the watchdog stops after it posted a credential card fails as
   expect(f.roomRoots(room.threadId)[0]).toMatchObject({ id: step.id, status: "failed", outcome: "stalled", executions: 1 });
   expect(f.roomRoots(room.threadId)[0].cards).toBeUndefined();
   expect((await messages()).find((message) => message.id === card.id)?.secret).toMatchObject({ stopped: true });
-  // The run retries a stalled step once: that attempt ends without a decision, and so does the run.
   f.open("step");
-  await expect.poll(async () => (await messages()).find((message) => message.kind === "goal.run")?.goalRun?.status, { timeout: 30_000 }).not.toBe("working");
+  await expect.poll(async () => (await messages()).find((message) => message.kind === "goal.run")?.goalRun?.status, { timeout: 30_000 }).toBe("needs-input");
   expect(nothingLive(f)).toEqual([]);
 }, { fake: { OMB_TEST_STALL_CLOCK: "1" } }), hostTimeout(60_000));
 
@@ -627,10 +629,14 @@ const sendGoal = (f: any, bot: { id: string; threadId: string }, text: string) =
 it("R9 a one-on-one goal step hands work to a teammate from its own root, and the root ends with the step", () => scenario(async (f) => {
   const mira = await f.bot("Mira", "Leadership");
   const clive = (await f.bots()).find((bot: any) => bot.id === f.clive.id);
+  const exportPath = join(f.dataDir, "R9-export.txt");
+  writeFileSync(exportPath, "Verified fixture export total: 42\n");
   f.script(f.clive.id,
     { key: "C-STEP", match: ["R9-GOAL"], steps: [{ arguments: { bot_ids: [mira.id], message: "R9-BRIEF: check the export numbers." } }],
       reply: `R9-SENT: Mira is on it.\n${goalDone("Mira is checking the numbers.")}` },
-    { key: "C1", match: ["R9-RESULT"], reply: "R9-FINAL: confirmed, 42." });
+    { key: "C1", match: ["R9-RESULT"], reply: `R9-FINAL: confirmed, 42.\n${goalDone("Mira checked the export and confirmed 42.")}` },
+    { key: "C-VERIFY", match: ["Verify the original goal independently", "R9-GOAL"], readEvidence: exportPath,
+      reply: "VERDICT: PASS\nEVIDENCE: Read the fixture export file and confirmed total 42." });
   f.script(mira.id, { key: "M0", match: ["R9-BRIEF"], reply: "R9-RESULT: the numbers add up." });
   expect((await sendGoal(f, clive, "R9-GOAL: have Mira check the export numbers.")).status).toBe(202);
   await expect.poll(() => f.db().assignments.find((row: any) => row.parentId)?.status, { timeout: 30_000 }).toBe("completed");
@@ -643,7 +649,8 @@ it("R9 a one-on-one goal step hands work to a teammate from its own root, and th
   await expect.poll(async () => (await f.messages(clive.threadId)).find((message: any) => message.kind === "goal.run")?.goalRun?.status, { timeout: 15_000 }).toBe("completed");
   await f.final(clive.threadId, "R9-FINAL", 45_000);
   await expect.poll(() => nothingLive(f), { timeout: 15_000 }).toEqual([]);
-  expect(f.turns().map((record: any) => record.planKey)).toEqual(["C-STEP", "M0", "C1"]);
+  expect(f.turns().filter((record: any) => record.planKey !== "C-VERIFY").map((record: any) => record.planKey)).toEqual(["C-STEP", "M0", "C1"]);
+  expect(f.turns().filter((record: any) => record.planKey === "C-VERIFY")).toHaveLength(1);
 }), hostTimeout(120_000));
 
 it("R9 does not rerun a one-on-one goal step after a restart: its goal run ended with the restart", () => scenario(async (f) => {
@@ -671,14 +678,14 @@ it("R9 a one-on-one goal step still asks the person first when the bot must ask 
   expect((await f.api("PATCH", `/api/bots/${clive.id}`, { approvePeerComms: true, approvalMode: "ask" })).status).toBe(200);
   f.script(clive.id,
     { key: "C-STEP", match: ["R9A-GOAL"], steps: [{ arguments: { bot_ids: [mira.id], message: "R9A-BRIEF: check the export numbers." }, expectError: true }],
-      reply: `R9A-ASKED: I asked before contacting Mira.\n${goalDone("Asked first.")}` });
+      reply: 'R9A-ASKED: I asked before contacting Mira.\n<openmaus-goal>{"status":"needs-input","detail":"Delegation was denied; the requested export check cannot proceed."}</openmaus-goal>' });
   expect((await sendGoal(f, clive, "R9A-GOAL: have Mira check the export numbers.")).status).toBe(202);
   const asked = async () => (await f.messages(clive.threadId)).find((message: any) => message.card?.tool === "delegate_bot");
   await expect.poll(async () => Boolean(await asked()), { timeout: 30_000 }).toBe(true);
   expect(f.db().assignments.filter((row: any) => row.parentId)).toEqual([]);
   const card = await asked();
   expect((await f.api("POST", `/api/bots/${clive.id}/respond`, { threadId: clive.threadId, requestId: card.card.requestId, behavior: "deny" })).status).toBe(200);
-  await expect.poll(async () => (await f.messages(clive.threadId)).find((message: any) => message.kind === "goal.run")?.goalRun?.status, { timeout: 30_000 }).toBe("completed");
+  await expect.poll(async () => (await f.messages(clive.threadId)).find((message: any) => message.kind === "goal.run")?.goalRun?.status, { timeout: 30_000 }).toBe("needs-input");
   await f.settle(1_000);
   expect(f.db().assignments.filter((row: any) => row.parentId)).toEqual([]);
   expect(f.turns(mira.id)).toEqual([]);

@@ -5,6 +5,7 @@ import { join } from "node:path";
 import { createECDH, randomBytes } from "node:crypto";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import webpush from "web-push";
+import { z } from "zod";
 import { allowedPushEndpoint, createWebPush } from "./web-push.ts";
 import { notificationListedFor } from "./routes/notifications.ts";
 import { dispatchRoutes } from "./routes/table.ts";
@@ -55,7 +56,7 @@ describe("paired browser push", () => {
   });
   it("persists keys and private subscription records and encrypts deliveries", async () => {
     const f = await fixture(), subscription = sub();
-    const key = await (await f.request("/key")).json();
+    const key = z.object({ publicKey: z.string() }).parse(await (await f.request("/key")).json());
     expect((await f.request("/subscription", "POST", { subscription })).status).toBe(200);
     const saved = JSON.parse(readFileSync(join(f.dataDir, "web-push.json"), "utf8"));
     expect(saved.keys.publicKey).toBe(key.publicKey);
@@ -64,6 +65,7 @@ describe("paired browser push", () => {
     reloaded.publish(notice);
     await vi.waitFor(() => expect(f.send).toHaveBeenCalledTimes(1));
     const [target, payload, options] = f.send.mock.calls[0];
+    if (typeof payload !== "string") throw new Error("Expected a JSON push payload");
     expect(target).toEqual(subscription);
     expect(payload).not.toContain("private conversation");
     expect(payload).not.toContain("private title");

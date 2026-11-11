@@ -79,6 +79,7 @@ describe("the room header in Simple mode", () => {
     const head = header(markup);
     expect(shown(head)).toEqual(["members"]);
     expect(head).toContain("data-room-name=");
+    expect(markup).toContain("max-md:pl-14");
     expect(head).toContain('aria-label="Open settings for Desk HQ"');
     expect(head).toContain("The recruiting desk");
     expect(head.match(/data-held|title="(?:Desk Manager|Vendor Bench|Job Board Sourcer|Paperwork|Phone Screener|Matcher|Interview Coordinator|Submission Writer|Timesheets)"/g)).toHaveLength(3);
@@ -96,6 +97,7 @@ describe("the room header in Simple mode", () => {
     fixture.advanced = true;
     const markup = view(room());
     expect(shown(header(markup))).toEqual(Object.keys(CONTROLS));
+    expect(markup).toContain("max-md:pl-14");
     expect(header(markup)).not.toContain("data-room-name");
     expect(markup).toContain(BULLETIN);
   });

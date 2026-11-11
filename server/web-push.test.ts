@@ -73,7 +73,7 @@ describe("paired browser push", () => {
     const [target, payload, options] = f.send.mock.calls[0];
     if (typeof payload !== "string") throw new Error("Expected a JSON push payload");
     expect(target).toEqual(subscription);
-    expect(payload).not.toContain("private conversation");
+    expect(JSON.parse(payload)).toMatchObject({ title: "Scout", body: "private conversation" });
     expect(payload).not.toContain("private title");
     const encrypted = webpush.generateRequestDetails(target, payload, options);
     expect(options).toMatchObject({ urgency: "high", TTL: 3600 });
@@ -110,6 +110,19 @@ describe("paired browser push", () => {
     f.push.publish(notice); f.push.publish(notice);
     await vi.waitFor(() => expect(f.send).toHaveBeenCalledTimes(1));
     await vi.waitFor(() => expect(JSON.parse(readFileSync(join(f.dataDir, "web-push.json"), "utf8")).entries).toHaveLength(0));
+  });
+  it("names the bot and previews the reply without sending a credential", async () => {
+    const f = await fixture(), subscription = sub("https://fcm.googleapis.com/fcm/send/reply");
+    await f.request("/subscription", "POST", { subscription });
+    f.push.publish({ ...notice, id: "n-reply", botName: "  Mira\n", body: "ready\n\n**now**" });
+    f.push.publish({ ...notice, id: "n-key", kind: "question", body: "the key is sk-ant-abcdefghijklmnopqrstuvwxyz" });
+    f.push.publish({ ...notice, id: "n-empty", botName: " ", body: "   " });
+    await vi.waitFor(() => expect(f.send).toHaveBeenCalledTimes(3));
+    const bodies = f.send.mock.calls.map(call => JSON.parse(String(call[1])));
+    expect(bodies[0]).toMatchObject({ title: "Mira", body: "ready now" });
+    expect(bodies[1].body).not.toContain("sk-ant-");
+    expect(bodies[1].body).toContain("redacted");
+    expect(bodies[2]).toMatchObject({ title: "OpenMausBot", body: "작업이 완료됐어요." });
   });
   it("can send the test after the phone has time to leave the app", async () => {
     const f = await fixture(), subscription = sub();

@@ -1242,8 +1242,15 @@ export function Sidebar({ open, onClose, collapseToIcons = false }: {
       data-native-view-overlay
       data-sidebar
       onClick={(event) => {
-        // The phone's list covers the whole screen: choosing the bot that is already open has to dismiss it too.
-        if (phone && open && event.target instanceof Element && !(event.target instanceof HTMLInputElement) && event.target.closest("[data-sidebar-bot-row], [data-sidebar-hero]")) onClose();
+        // The phone's list covers the whole screen. Choosing the chat already on screen has to dismiss it too:
+        // that choice does not change selection, so the effect that closes the list on a new chat never runs.
+        // A group row was missing here, which left the list up until a different chat was opened. The expand
+        // chevron and new-task button sit outside the row, and a bulk-select checkbox is not opening a chat.
+        const target = event.target;
+        const opensChat = target instanceof Element
+          && !(target instanceof HTMLInputElement)
+          && target.closest("[data-sidebar-bot-row], [data-sidebar-hero], [data-sidebar-group-row], [data-sidebar-thread-row]:not([role=checkbox])");
+        if (phone && open && opensChat) onClose();
       }}
       style={{ "--sidebar-width": `${sizing.width}px` } as CSSProperties}
       className={cn(

@@ -2,9 +2,11 @@ import { Fragment } from "react";
 
 import { BotAvatar } from "./Avatar";
 import { cn } from "@/lib/cn";
+import { t } from "@/lib/i18n";
+import { openRoomMemberSettings } from "@/lib/group-member-settings";
 import { MAUS_COLOR_NAMES, normalizeState, type MausColor } from "@/lib/mascot";
 import type { RoomAddressee } from "@/lib/room-addressees";
-import type { Bot } from "@/state/store";
+import { useStore, type Bot } from "@/state/store";
 
 function isPaletteColor(color: string | undefined): color is MausColor {
   return (MAUS_COLOR_NAMES as readonly string[]).includes(color ?? "");
@@ -21,18 +23,39 @@ function Name({ name, color }: { name: string; color?: string }) {
 }
 
 export function ClusterLabel({ bot, name, color, to = [] }: { bot?: Bot; name: string; color: string; to?: readonly RoomAddressee[] }) {
+  const { state, dispatch } = useStore();
+  const known = isPaletteColor(color);
+  const face = (
+    <BotAvatar
+      bot={bot ?? { name, color: color as Bot["color"] }}
+      state={normalizeState(bot?.mascotExpression) ?? "happy"}
+      size={20}
+      motion="none"
+      motionKey={0}
+      animated={false}
+      readable={known}
+    />
+  );
+  const identity = (
+    <>
+      {face}
+      <Name name={name} color={color} />
+    </>
+  );
   return (
     <div className="mt-1.5 flex flex-wrap items-center gap-x-1.5 gap-y-0.5 pl-0.5">
-      <BotAvatar
-        bot={bot ?? { name, color: color as Bot["color"] }}
-        state={normalizeState(bot?.mascotExpression) ?? "happy"}
-        size={20}
-        motion="none"
-        motionKey={0}
-        animated={false}
-        readable={isPaletteColor(color)}
-      />
-      <Name name={name} color={color} />
+      {bot?.id ? (
+        <button
+          type="button"
+          data-room-member={bot.id}
+          title={t("chat.openBotPanel")}
+          aria-label={t("chat.openProfileAria", { name })}
+          onClick={() => openRoomMemberSettings(dispatch, state, bot.id)}
+          className="flex items-center gap-1.5 rounded-md text-left hover:bg-raised/60"
+        >
+          {identity}
+        </button>
+      ) : identity}
       {to.length > 0 && (
         <>
           <span className="inline-block text-[13px] text-ink-tertiary rtl:-scale-x-100">→</span>

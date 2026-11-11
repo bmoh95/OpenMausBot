@@ -154,7 +154,7 @@ export function RoomHeader({
   if (simple) {
     const more = members.length - SIMPLE_FACES;
     return (
-      <div {...headerDragProps} className="@container/roomhead px-5 py-3 pl-11 md:pl-5">
+      <div {...headerDragProps} className="@container/roomhead px-5 py-3 max-md:pl-14 md:pl-5">
         <div data-roomhead-row className="flex items-center justify-between gap-3">
           <div data-roomhead-identity className="flex min-w-0 flex-col items-start" style={headerNoDragStyle}>
             <button
@@ -203,8 +203,8 @@ export function RoomHeader({
         {...headerDragProps}
         className={cn(
           // A container query never matches the container itself, so the row that wraps is the child below.
-          "@container/roomhead px-5 py-3",
-          "pl-11 md:pl-5",
+          // On a phone the back button sits over this header's left edge, the same clearance a one-to-one chat uses.
+          "@container/roomhead px-5 py-3 max-md:pl-14 md:pl-5",
         )}
       >
         <div data-roomhead-row className="flex items-center justify-between @max-3xl/roomhead:flex-wrap @max-3xl/roomhead:gap-y-1">

@@ -12,7 +12,7 @@ it("opts into ordinary root capabilities and durable home without host privilege
   expect(args).toContain("CHOWN");
   expect(args).toContain("DAC_OVERRIDE");
   expect(args[args.indexOf("--memory") + 1]).toBe("8g");
-  expect(args).toContainEqual(expect.stringContaining("target=/home/cua"));
+  expect(args).toContainEqual(expect.stringMatching(/target=\/home\/cua$/));
   expect(args).not.toContain("--privileged");
   expect(args).not.toContain("SYS_ADMIN");
   const config = { CapDrop: ["ALL"], CapAdd: LOCAL_VM_ADMIN_CAPS, Privileged: false,
@@ -32,5 +32,5 @@ it("keeps the restricted profile unless the operator enables administration", ()
     expect(args, cap).not.toContain(cap);
   }
   expect(args).not.toContain("--restart");
-  expect(args).not.toContainEqual(expect.stringContaining("target=/home/cua"));
+  expect(args).not.toContainEqual(expect.stringMatching(/target=\/home\/cua$/));
 });

@@ -48,6 +48,7 @@ export interface HandoffView {
   executions: number;
   startedAt?: number;
   lastProgressAt?: number;
+  approvalGranted: boolean;
   kind: "work" | "assignment";
   origin?: WorkOrigin;
   restarts: number;
@@ -104,6 +105,7 @@ export interface HandoffOptions {
   mode?: Mode;
   reply?: Reply;
   thread?: "standing" | "new";
+  approvalGranted?: boolean;
   rework?: boolean;
   requestBatchKey?: string;
   doneWhen?: string;

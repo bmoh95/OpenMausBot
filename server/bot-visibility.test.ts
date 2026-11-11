@@ -235,8 +235,8 @@ describe("live frames for a member", () => {
     expect(frameForMember({ kind: "bots.order", botIds: ["hr", "pub", "corp"] }, ctx, seen())).toEqual({ kind: "bots.order", botIds: ["pub", "corp"] });
     const config = { kind: "config", membership: {} };
     expect(frameForMember(config, ctx, seen())).toBe(config);
-    expect(frameForMember({ kind: "bot", bot: { id: "corp", visibility: { people: ["@example.test"] } } }, ctx, seen()))
-      .toEqual({ kind: "bot", bot: { id: "corp" } });
+    expect(frameForMember({ kind: "bot", bot: { id: "corp", visibility: { people: ["@example.test"] }, peers: ["pub", "hr"] } }, ctx, seen()))
+      .toEqual({ kind: "bot", bot: { id: "corp", peers: ["pub"] } });
   });
 
   it("withdraws a bot once when it becomes hidden, and sends it whole when it appears", () => {
@@ -267,14 +267,14 @@ describe("live frames for a member", () => {
   it("narrows every bot in a JSON answer for a member", () => {
     const bob = new VisibleSet(bots, groups, BOB);
     const body = {
-      bot: { id: "corp", visibility: { people: ["@example.test"] } },
+      bot: { id: "corp", visibility: { people: ["@example.test"] }, peers: ["pub", "hr"] },
       bots: [{ id: "pub", visibility: "everyone" }],
       result: { bot: { id: "corp", visibility: "admins" } },
       messages: [{ bot: { visibility: "untouched" } }],
       ok: true,
     };
     expect(memberBody(body, bob)).toEqual({
-      bot: { id: "corp" },
+      bot: { id: "corp", peers: ["pub"] },
       bots: [{ id: "pub" }],
       result: { bot: { id: "corp" } },
       messages: [{ bot: { visibility: "untouched" } }],
@@ -285,7 +285,7 @@ describe("live frames for a member", () => {
   });
 
   it("strips nothing for someone who sees everything", () => {
-    const bot = { id: "hr", visibility: "admins" };
+    const bot = { id: "hr", visibility: "admins", peers: ["x"] };
     expect(memberBot(bot, new VisibleSet(bots, groups, SEES_EVERYTHING))).toBe(bot);
   });
 

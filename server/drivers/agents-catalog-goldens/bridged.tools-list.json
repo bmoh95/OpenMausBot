@@ -107,6 +107,42 @@
       }
     },
     {
+      "name": "work_checkpoint",
+      "description": "Save this task's durable progress after a meaningful step and before ending a multi-step implementation turn. working requires remaining work and next_action; if your turn ends with working, the harness continues this same task within its recovery budget. completed requires remaining [] and appropriate outcome verification; this ledger alone is not evidence. needs_input is only for a genuine human authentication, missing required input or external dependency. It grants no permissions, runs no commands, and never replaces coordinate_bots. Do not use for casual chat or consultations. Never include secrets.",
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "working",
+              "completed",
+              "needs_input"
+            ]
+          },
+          "summary": {
+            "type": "string"
+          },
+          "remaining": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 20
+          },
+          "next_action": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "status",
+          "summary",
+          "remaining"
+        ]
+      }
+    },
+    {
       "name": "list_bots",
       "description": "List every other bot (agent) you can contact, in every department, with its department, model and current status. Call this to discover exact teammate IDs before assigning work or asking advice with coordinate_bots.",
       "inputSchema": {
@@ -418,7 +454,7 @@
     },
     {
       "name": "find_tool",
-      "description": "Find an OpenMausBot tool that is not in your tool list. Say what you want to do in a few words, or give the tool's name. Each match comes back with its description and exact input schema; run one with use_tool. Tools reached this way: list_shared_computers, shared_computer, assignment_status, usage_limits, list_threads, close_thread, start_thread, list_models, vm_exec, show_widget, show_html, unpublish_page, create_bot, list_team_setup, list_team_library, propose_team_setup, propose_bot_deletion, manage_room, x_search, research_search, research_endpoint, research_call, decide, extract, generate_image, report_bug, retry_thread, memory_log, session_search, trigger_info, trigger, delete_trigger, wait_until, list_waits, cancel_wait, propose_profile, propose_model, propose_team_memory, skills_list, skill_manage, mcp_server.",
+      "description": "Find an OpenMausBot tool that is not in your tool list. Say what you want to do in a few words, or give the tool's name. Each match comes back with its description and exact input schema; run one with use_tool. Tools reached this way: list_shared_computers, shared_computer, assignment_status, raise_escalation, usage_limits, list_threads, close_thread, start_thread, list_models, vm_exec, show_widget, show_html, unpublish_page, create_bot, list_team_setup, list_team_library, propose_team_setup, propose_bot_deletion, manage_room, x_search, research_search, research_endpoint, research_call, decide, extract, generate_image, report_bug, retry_thread, memory_log, session_search, trigger_info, trigger, delete_trigger, wait_until, list_waits, cancel_wait, propose_profile, propose_model, propose_team_memory, skills_list, skill_manage, mcp_server.",
       "inputSchema": {
         "type": "object",
         "additionalProperties": false,

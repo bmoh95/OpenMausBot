@@ -49,7 +49,7 @@ export function teamSetupRevision(bot: BotRecord, fields?: TeamSetupFields): str
   if (fields === undefined) {
     return createHash("sha256").update(JSON.stringify({
       ...profileSnapshot(bot), section: section(bot.section), modelSelection: bot.modelSelection,
-      hidden: Boolean(bot.hidden), chiefOfStaff: Boolean(bot.chiefOfStaff),
+      hidden: Boolean(bot.hidden), chiefOfStaff: Boolean(bot.chiefOfStaff), peers: bot.peers,
       managedSections: bot.managedSections,
       approvalMode: bot.approvalMode, autoApprove: bot.autoApprove, approvalGrant: bot.approvalGrant,
       receipt: bot.lastTeamSetupReceipt?.requestId,
@@ -165,6 +165,7 @@ export class TeamSetupRequestService {
       } else {
         if (!target || target.hidden) throw new TeamSetupError("A target bot is outside this Chief's authorized team", 403);
         if (!this.options.hasTeamAuthority(chief, target.section)) throw new TeamSetupError(outsideDepartmentReason(chief, target), 403);
+        if (target.id !== chief.id && Array.isArray(chief.peers) && !chief.peers.includes(target.id)) throw new TeamSetupError("A target bot is outside this Chief's peer scope", 403);
         if (teamSetupRevision(target, operation.fields) !== operation.expectedRevision) throw new TeamSetupError(`@${target.name} changed. This setup was cancelled; review a new proposal.`, 409);
         const sourceThreadId = immediate && target.id === chief.id ? request.threadId : undefined;
         if (this.options.targetBusy(target.id, sourceThreadId) && (confirming || target.id !== chief.id)) throw new TeamSetupError(`Stop @${target.name}'s work before changing its setup`, 409);
@@ -192,6 +193,7 @@ export class TeamSetupRequestService {
       const target = this.options.store.bot(request.deletion.botId);
       if (!target || target.hidden || target.id === chief.id) throw new TeamSetupError("This deletion target is no longer an authorized teammate", 403);
       if (!this.options.hasTeamAuthority(chief, target.section)) throw new TeamSetupError(outsideDepartmentReason(chief, target), 403);
+      if (Array.isArray(chief.peers) && !chief.peers.includes(target.id)) throw new TeamSetupError("This deletion target is outside this Chief's peer scope", 403);
       if (target.defaultBot) throw new TeamSetupError(defaultBotRefusal(target.name), 409);
       if (teamSetupRevision(target) !== request.deletion.expectedRevision || this.options.targetBusy(target.id)) throw new TeamSetupError("The deletion target changed or is working. Review a new deletion proposal.", 409);
     }

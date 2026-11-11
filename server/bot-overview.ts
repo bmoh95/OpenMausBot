@@ -54,6 +54,8 @@ export interface OverviewFacts {
     | "cwd"
     | "autoApprove"
     | "approvalMode"
+    | "approvePeerComms"
+    | "peers"
     | "composio"
     | "connectorTools"
     | "browser"
@@ -244,7 +246,11 @@ function reachesLines(facts: OverviewFacts): string[] {
   }
   if (facts.browserEnabled && facts.engine?.browserMcp && facts.bot.browser !== false && facts.bot.computer !== "off") lines.push("Has the built-in browser.");
   const peers = facts.sectionPeers;
-  if (facts.engine?.agentsMcp && peers > 0) lines.push(peers === 1 ? "Can talk to the other bot." : `Can talk to all ${peers} other bots, in any department.`);
+  if (facts.engine?.agentsMcp && peers > 0 && facts.bot.peers?.length !== 0) {
+    lines.push(Array.isArray(facts.bot.peers)
+      ? "Talks only to the bots chosen for it."
+      : peers === 1 ? "Can talk to the other bot." : `Can talk to all ${peers} other bots, in any department.`);
+  }
   if (facts.bot.chiefOfStaff) lines.push("Coordinates its department as Chief of Staff.");
   if (facts.bot.chiefOfStaff && facts.allDepartments) lines.push("In charge of every department, including new ones.");
   else if (facts.bot.chiefOfStaff && facts.bot.managedSections?.length) {
@@ -258,6 +264,8 @@ function wontLines(facts: OverviewFacts): string[] {
   const mode = approvalModeFor(facts.bot);
   if (mode === "ask") lines.push("Command approvals use Ask mode; saved permissions and provider rules still apply.");
   if (mode === "custom") lines.push("Command approvals follow the provider's custom configuration.");
+  if (facts.bot.peers?.length === 0) lines.push("Cannot initiate contact with other bots.");
+  else if (mode !== "full" && facts.bot.approvePeerComms) lines.push("Asks before contacting other bots.");
   if (!couldUseApps(facts) || (facts.connectedApps.authoritative && facts.connectedApps.services.length === 0)) {
     lines.push("Has no connected apps.");
   }

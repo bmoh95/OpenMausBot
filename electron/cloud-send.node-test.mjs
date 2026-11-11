@@ -71,10 +71,10 @@ test("a server's answer is kept only in the shape main relies on", () => {
   assert.equal(parseSendSummary(null), null);
 });
 
-test("a bot's fields reach My Cloud without Custom approval", () => {
-  const ember = { id: "ember", soul: "Be brief.", approvalMode: "custom", alwaysAllow: ["Bash(ls)"], section: "Ops", modelSelection: { instanceId: "claude", model: "m", extra: 1 }, cwd: "/Users/amit/work" };
-  const body = botPatch(ember, ["soul", "access", "team", "model"]);
-  assert.deepEqual(body, { soul: "Be brief.", alwaysAllow: ["Bash(ls)"], section: "Ops", modelSelection: { instanceId: "claude", model: "m" }, requireAvailableModel: true });
+test("a bot's fields reach My Cloud without Custom approval and without naming bots My Cloud lacks", () => {
+  const ember = { id: "ember", soul: "Be brief.", approvalMode: "custom", alwaysAllow: ["Bash(ls)"], peers: ["juno", "kit"], modelSelection: { instanceId: "claude", model: "m", extra: 1 }, cwd: "/Users/amit/work" };
+  const body = botPatch(ember, ["soul", "access", "team", "model"], new Set(["juno"]));
+  assert.deepEqual(body, { soul: "Be brief.", alwaysAllow: ["Bash(ls)"], peers: ["juno"], modelSelection: { instanceId: "claude", model: "m" }, requireAvailableModel: true });
   assert.ok(!Object.values(BOT_PARTS).flat().includes("cwd"), "a working folder is this computer's");
   assert.deepEqual(parseSendState({ auto: false, clouds: { "javascript:alert(1)": {}, [CLOUD]: { off: { a: "you", b: "nonsense" }, created: { "bot:x": true, "login:y": true }, creating: { "bot:z": true, "skill:q": true }, release: [{ id: "mcp:a", digest: "d" }, { id: 3 }],
     verified: { "t-1": { newest: "m9", rows: 9, there: 9 }, "t-2": { newest: 3 }, "bad id": { newest: "m", rows: 1, there: 1 } }, stamped: { "t-1": true, "t-2": "yes" } } } }),

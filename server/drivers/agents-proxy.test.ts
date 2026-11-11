@@ -641,6 +641,7 @@ describe("agents-proxy MCP surface", () => {
       "list_room_targets",
       "coordinate_bots",
       "assignment_status",
+      "work_checkpoint",
       "list_bots",
       "usage_limits",
       "list_rooms",

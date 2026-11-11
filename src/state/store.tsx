@@ -317,6 +317,8 @@ export interface Bot extends DefaultBotFields, Pick<WireBot, "mascotFaceColor" |
   chiefOfStaff?: boolean;
   managedSections?: string[];
   createdBy?: string; reportsTo?: string;
+  approvePeerComms?: boolean;
+  peers?: string[];
   composio?: boolean;
   connectorTools?: Record<string, ConnectorToolGrant>;
   connectorScopes?: { apps: Record<string, "read" | "write"> }; phoneApps?: import("../../shared/phone-apps").PhoneApps;
@@ -1534,10 +1536,11 @@ export function reducer(state: AppState, action: Action): AppState {
         connectorTools,
         connectorScopes, phoneApps,
         defaultBot,
+        peers,
         ...rest
       } = action.patch;
       const next = action.patch.chiefOfStaff ? { ...animated, bots: withOneChief(animated.bots, { ...target, ...rest, id: action.botId }) } : animated;
-      const botPatch: Partial<Bot> = { ...rest, ...(phoneApps !== undefined && { phoneApps: phoneApps ?? undefined }), ...(typeof mainThreadChoice === "string" && { mainThreadId: mainThreadChoice }) };
+      const botPatch: Partial<Bot> = { ...rest, ...(phoneApps !== undefined && { phoneApps: phoneApps ?? undefined }), ...(peers !== undefined && { peers: peers ?? undefined }), ...(typeof mainThreadChoice === "string" && { mainThreadId: mainThreadChoice }) };
       if (computer === null) botPatch.computer = undefined;
       else if (computer !== undefined) botPatch.computer = computer;
       if (defaultBot === null) botPatch.defaultBot = undefined;

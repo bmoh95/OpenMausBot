@@ -190,6 +190,7 @@ describe("team manifests", () => {
             autoApprove: true,
             alwaysAllow: ["Bash"],
             chiefOfStaff: true,
+            approvePeerComms: false,
             composio: true,
             computer: "local",
             cloudBackend: "vps",

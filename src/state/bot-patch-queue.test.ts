@@ -165,6 +165,7 @@ describe("bot patch queue", () => {
           connectorScopes: patch.connectorScopes ?? undefined,
           phoneApps: patch.phoneApps ?? undefined,
           defaultBot: patch.defaultBot ?? undefined,
+          peers: patch.peers ?? undefined,
         });
       },
       reconcile: async () => bot(),

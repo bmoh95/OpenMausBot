@@ -1,4 +1,4 @@
-import type { Notification } from "../../shared/notification";
+import { notificationBanner, type Notification } from "../../shared/notification";
 import { plainPreviewText } from "../../shared/plain-preview";
 import { finishedNotificationsEnabled, notificationSoundsEnabled } from "./notification-preferences";
 import { pushEnabled, pushWorker } from "./web-push";
@@ -43,8 +43,9 @@ function showSamsungBackgroundNotice(frame: NotifyFrame) {
   const carried = (frame as NotifyFrame & { id?: unknown }).id;
   const id = typeof carried === "string" && carried ? carried : `${frame.kind}:${frame.threadId}`;
   const silent = !notificationSoundsEnabled();
-  void pushWorker().then(registration => registration.showNotification("OpenMausBot", {
-    body: frame.kind === "done" ? "작업이 완료됐어요." : "확인이 필요한 새 알림이 있어요.",
+  const banner = notificationBanner(frame);
+  void pushWorker().then(registration => registration.showNotification(banner.title, {
+    body: banner.body,
     icon: "/app-icon-192.png",
     tag: `omb-push:${id}`,
     ...(silent ? { silent: true } : {}),

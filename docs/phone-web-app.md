@@ -56,8 +56,9 @@ setup never triggers a permission prompt by itself. This follows the
 
 The server encrypts payloads using Web Push and VAPID. No paid API key or
 external account is required; delivery uses the browser vendor's push service.
-The banner contains generic completion/attention text, not conversation text,
-credentials, screenshots, or approval details. Tapping it opens the conversation;
+The banner title is the bot's name and the body is a short plain preview of
+what it said. Credential-shaped text is redacted. The banner does not include
+screenshots. Tapping it opens the conversation;
 it never approves an action. Focused app windows suppress duplicate banners.
 
 Subscription and VAPID key material is stored owner-only in

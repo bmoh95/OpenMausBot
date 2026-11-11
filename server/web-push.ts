@@ -4,7 +4,7 @@ import { createHash } from "node:crypto";
 import webpush from "web-push";
 import { z } from "zod";
 import { writeFileAtomic } from "./atomic.ts";
-import type { NotificationLogEntry } from "../shared/notification.ts";
+import { notificationBanner, type NotificationLogEntry } from "../shared/notification.ts";
 import type { RequestAuth } from "./request-auth.ts";
 import { personKey } from "./person-key.ts";
 import type { NotificationListed } from "./routes/notifications.ts";
@@ -115,9 +115,10 @@ export function createWebPush(deps: {
         if (!auth || !deps.listed(auth)(notification) || (notification.kind === "done" && !entry.finished)) continue;
         if (options.adminOnly && !auth.scopes.includes("admin")) continue;
         if (options.person && (auth.kind !== "session" || personKey(auth.session) !== options.person)) continue;
+        const banner = notificationBanner(notification);
         const payload = {
           id: notification.id, botId: notification.botId, threadId: notification.threadId,
-          title: "OpenMausBot", body: notification.kind === "done" ? "작업이 완료됐어요." : "확인이 필요한 새 알림이 있어요.",
+          title: banner.title, body: banner.body,
           silent: !entry.sounds,
         };
         enqueue(async () => {

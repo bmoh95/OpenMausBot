@@ -251,12 +251,11 @@ describe("Samsung background delivery", () => {
     return shown;
   }
 
-  it("shows a generic banner while a Samsung page is backgrounded and push is on", async () => {
+  it("names the bot and shows the reply while a Samsung page is backgrounded and push is on", async () => {
     const shown = arm("Mozilla/5.0 SamsungBrowser/31.0", true);
     showNotification({ ...frame, id: "n1" } as NotifyFrame, vi.fn());
     await vi.waitFor(() => expect(shown).toHaveBeenCalledTimes(1));
-    expect(shown).toHaveBeenCalledWith("OpenMausBot", expect.objectContaining({ body: "작업이 완료됐어요.", tag: "omb-push:n1" }));
-    expect(JSON.stringify(shown.mock.calls[0])).not.toContain("All done");
+    expect(shown).toHaveBeenCalledWith("Maus", expect.objectContaining({ body: "All done", tag: "omb-push:n1" }));
   });
 
   it("leaves a visible Samsung page and other browsers to the push worker", async () => {

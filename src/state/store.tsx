@@ -577,6 +577,8 @@ export interface AppState {
   webhookAttempts: WebhookAttempt[];
   webhookIngress: WebhookIngressStatus | null;
   settingsOpen: boolean;
+  /** While a room stays selected, the bot whose settings, computer, or activity panel is open. */
+  settingsBotId: string | null;
   pluginsOpen: boolean;
   pluginsSurface: "apps" | "mcp";
   botCreationPending: boolean;
@@ -784,7 +786,7 @@ export type Action =
   | { type: "error"; message: string | null }
   | { type: "notice"; notice: AppState["notice"] }
   | { type: "revealThread"; threadId: string }
-  | { type: "toggleSettings"; open?: boolean; section?: BotSettingsSection; botId?: string }
+  | { type: "toggleSettings"; open?: boolean; section?: BotSettingsSection; botId?: string; keepRoom?: boolean }
   | { type: "togglePlugins"; open?: boolean; surface?: "apps" | "mcp" }
   | { type: "toggleComputer"; open?: boolean; botId?: string }
   | { type: "openDataResult"; botId: string; cardId: string }
@@ -1422,7 +1424,8 @@ export function reducer(state: AppState, action: Action): AppState {
       };
     case "toggleSettings": {
       if (action.botId !== undefined && !state.bots.some((bot) => bot.id === action.botId && !bot.hidden)) return state;
-      const selectedId = action.botId ?? state.selectedId;
+      const keepRoom = action.keepRoom === true && state.activeView === "chat" && state.groups.some((group) => group.id === state.selectedId);
+      const selectedId = keepRoom ? state.selectedId : (action.botId ?? state.selectedId);
       const open = action.open ?? (action.botId !== undefined || !state.settingsOpen);
       const freshOpen = open && !state.settingsOpen;
       const named = action.section !== undefined;
@@ -1430,6 +1433,8 @@ export function reducer(state: AppState, action: Action): AppState {
         ...state,
         selectedId,
         settingsOpen: open,
+        // Closing leaves the member in place so a computer panel opened from those settings still knows its bot.
+        settingsBotId: keepRoom ? (action.botId ?? state.settingsBotId) : open ? null : state.settingsBotId,
         activityOpen: open ? false : state.activityOpen,
         botSettingsSection: action.section ?? state.botSettingsSection,
         botSettingsExpandAccordion: open ? named || (freshOpen && state.botSettingsSectionStored) : false,
@@ -1877,6 +1882,7 @@ export const initialState: AppState = {
   webhookAttempts: [],
   webhookIngress: null,
   settingsOpen: false,
+  settingsBotId: null,
   pluginsOpen: false,
   pluginsSurface: "apps",
   botCreationPending: false,

@@ -45,7 +45,8 @@ vi.mock("@/state/store", async (importOriginal) => {
 
 import { initialState } from "@/state/store";
 import { PHONE_LAYOUT } from "@/lib/use-media-query";
-import { Sidebar } from "./Sidebar";
+import { ClusterLabel } from "./RoomClusterLabel";
+import { GroupListItem, Sidebar } from "./Sidebar";
 
 const bot: Bot = {
   id: "atlas", threadId: "atlas-thread", name: "Atlas", title: "", description: "", notifications: true,
@@ -138,6 +139,66 @@ describe("phone chat list", () => {
     checkbox.parentElement!.setAttribute("role", "checkbox");
     dismiss({ target: checkbox });
     expect(onClose).not.toHaveBeenCalled();
+  });
+
+  it("opens that bot's settings from a group face, and the room name still opens the room", () => {
+    fixture.state = { ...initialState, bots: [bot], groups: [room], selectedId: room.id, activeView: "chat" };
+    fixture.index = 0;
+    fixture.values = [];
+    const row = nodes(GroupListItem({ group: room, density: "comfortable", onMenu: vi.fn() }))
+      .find((node) => node.props["data-sidebar-group-row"] === room.id);
+    if (!row?.props.onClick) throw new Error("group row has no click");
+    const face = document.createElement("span");
+    face.setAttribute("data-sidebar-group-member", bot.id);
+    const mark = document.createElement("svg");
+    face.append(mark);
+    row.props.onClick({ target: mark });
+    expect(fixture.dispatch).toHaveBeenCalledWith({ type: "toggleSettings", open: true, botId: bot.id, keepRoom: true });
+    fixture.dispatch.mockClear();
+    row.props.onClick({ target: document.createElement("span") });
+    expect(fixture.dispatch).toHaveBeenCalledWith({ type: "select", id: room.id });
+  });
+
+  it("opens the room under the panel when that group's face is chosen from another chat", () => {
+    fixture.state = { ...initialState, bots: [bot], groups: [room], selectedId: bot.id, activeView: "chat" };
+    fixture.index = 0;
+    fixture.values = [];
+    const row = nodes(GroupListItem({ group: room, density: "comfortable", onMenu: vi.fn() }))
+      .find((node) => node.props["data-sidebar-group-row"] === room.id);
+    const face = document.createElement("span");
+    face.setAttribute("data-sidebar-group-member", bot.id);
+    row?.props.onClick?.({ target: face });
+    expect(fixture.dispatch.mock.calls.map((call) => call[0])).toEqual([
+      { type: "select", id: room.id },
+      { type: "toggleSettings", open: true, botId: bot.id, keepRoom: true },
+    ]);
+  });
+
+  it("keeps a bot-thread row as a chat, and an icon tile as the room", () => {
+    const dm = { ...room, id: "dm", dm: true };
+    fixture.state = { ...initialState, bots: [bot], groups: [dm], selectedId: bot.id, activeView: "chat" };
+    fixture.index = 0;
+    fixture.values = [];
+    const dmRow = nodes(GroupListItem({ group: dm, density: "comfortable", onMenu: vi.fn() }))
+      .find((node) => node.props["data-sidebar-group-row"] === dm.id);
+    const face = document.createElement("span");
+    face.setAttribute("data-sidebar-group-member", bot.id);
+    dmRow?.props.onClick?.({ target: face });
+    expect(fixture.dispatch).toHaveBeenCalledWith({ type: "select", id: dm.id });
+    fixture.dispatch.mockClear();
+    fixture.index = 0;
+    fixture.values = [];
+    const tile = nodes(GroupListItem({ group: room, density: "icons", onMenu: vi.fn() }))
+      .find((node) => node.props["data-sidebar-group-row"] === room.id);
+    tile?.props.onClick?.({ target: face });
+    expect(fixture.dispatch).toHaveBeenCalledWith({ type: "select", id: room.id });
+  });
+
+  it("opens that bot's settings from the name above its messages", () => {
+    fixture.state = { ...initialState, bots: [bot], groups: [room], selectedId: room.id, activeView: "chat" };
+    const label = ClusterLabel({ bot, name: bot.name, color: bot.color }) as ReactElement<Props>;
+    label.props.onClick?.({ target: document.createElement("span") });
+    expect(fixture.dispatch).toHaveBeenCalledWith({ type: "toggleSettings", open: true, botId: bot.id, keepRoom: true });
   });
 
   it("stays open on a wide screen, and while the list is not covering the chat", () => {

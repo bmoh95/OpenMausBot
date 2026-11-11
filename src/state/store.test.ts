@@ -2303,6 +2303,26 @@ describe("bot settings section", () => {
     messages: [],
   } as never as Bot;
 
+  it("opens a room member's settings over the room", () => {
+    const room = {
+      id: "room", threadId: "room-thread", name: "Room", memberIds: [bot.id], messages: [],
+      defaultResponder: { kind: "mentions" }, bulletin: "", unread: false, createdAt: 1,
+    } as Group;
+    const state = { ...initialState, bots: [bot], groups: [room], selectedId: room.id, activeView: "chat" as const };
+    const next = reducer(state, { type: "toggleSettings", open: true, botId: bot.id, keepRoom: true });
+    expect(next.selectedId).toBe(room.id);
+    expect(next.settingsOpen).toBe(true);
+    expect(next.settingsBotId).toBe(bot.id);
+    const closed = reducer(next, { type: "toggleSettings", open: false });
+    expect(closed.settingsOpen).toBe(false);
+    expect(closed.selectedId).toBe(room.id);
+    expect(closed.settingsBotId).toBe(bot.id);
+    const computer = reducer(closed, { type: "toggleComputer", open: true });
+    expect(computer.computerOpen).toBe(true);
+    expect(computer.selectedId).toBe(room.id);
+    expect(computer.settingsBotId).toBe(bot.id);
+  });
+
   it("toggleSettings with a section sets it and opens", () => {
     const next = reducer(initialState, {
       type: "toggleSettings",

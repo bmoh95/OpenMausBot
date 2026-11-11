@@ -152,10 +152,15 @@ function Shell({ viewer }: { viewer: WelcomeViewer | null }) {
   const group = state.groups.find((g) => g.id === state.selectedId);
   const chiefStep = useChiefStepOpen();
   const bot = group || chiefStep ? undefined : (state.bots.find((b) => b.id === state.selectedId) ?? state.bots[0]);
+  const memberBot = !bot && group && state.settingsBotId
+    ? state.bots.find((candidate) => candidate.id === state.settingsBotId && !candidate.hidden)
+    : undefined;
+  // A room has no selected bot. The panel still belongs to the member whose face or name was chosen.
+  const panelBot = bot ?? memberBot;
   const notificationFeed = useNotificationFeed() && !remoteClient;
   const advanced = useAdvancedMode();
   const roomPanelOpen = useRoomPanelShown({ group, state, simple: !advanced && !remoteClient });
-  const sidePanelOpen = (Boolean(bot) && (state.settingsOpen || state.computerOpen || state.inspectorOpen || state.activityOpen)) || roomPanelOpen || (notificationFeed && state.notificationsOpen) || inboxShown;
+  const sidePanelOpen = (Boolean(panelBot) && (state.settingsOpen || state.computerOpen || state.inspectorOpen || state.activityOpen)) || roomPanelOpen || (notificationFeed && state.notificationsOpen) || inboxShown;
   const collapseSidebar = sidePanelOpen && !sidebarAndPanelFit;
   const calendarFocus = state.activeView === "routines" && state.routinesFocus.view === "calendar";
   const notificationTray = notificationFeed && !calendarFocus;
@@ -414,18 +419,18 @@ function Shell({ viewer }: { viewer: WelcomeViewer | null }) {
         </main>
       )}
       {/* Sibling panels need distinct keys: two keyed `bot.id` collide in React's keyed reconciliation. */}
-      {state.settingsOpen && bot && (
+      {state.settingsOpen && panelBot && (
         remoteClient
-          ? <RemoteAgentSettingsPanel bot={bot} overlay={state.computerOpen && !twoSidePanelsFit} />
-          : <BotSettingsDialog key={`settings:${bot.id}`} bot={bot} overlay={(state.inspectorOpen || state.computerOpen || (notificationFeed && state.notificationsOpen)) && !twoSidePanelsFit} />
+          ? <RemoteAgentSettingsPanel bot={panelBot} overlay={state.computerOpen && !twoSidePanelsFit} />
+          : <BotSettingsDialog key={`settings:${panelBot.id}`} bot={panelBot} overlay={(state.inspectorOpen || state.computerOpen || (notificationFeed && state.notificationsOpen)) && !twoSidePanelsFit} />
       )}
-      {state.computerOpen && bot && (
+      {state.computerOpen && panelBot && (
         remoteClient ? (
-          <RemoteDesktopPanel key={`computer:${bot.id}`} bot={bot} />
+          <RemoteDesktopPanel key={`computer:${panelBot.id}`} bot={panelBot} />
         ) : (
           <ComputerPanel
-            key={`computer:${bot.id}`}
-            bot={bot}
+            key={`computer:${panelBot.id}`}
+            bot={panelBot}
             onOpenVmWorkspace={openLocalVmWorkspace}
           />
         )
@@ -433,8 +438,8 @@ function Shell({ viewer }: { viewer: WelcomeViewer | null }) {
       {roomPanelOpen && group && (
         <RoomPanel key={`room:${group.id}`} group={group} overlay={notificationFeed && state.notificationsOpen && !twoSidePanelsFit} />
       )}
-      {!remoteClient && state.inspectorOpen && bot && <InspectorPanel key={bot.threadId} bot={bot} />}
-      {!remoteClient && state.activityOpen && bot && <ActivityPanel key={`activity:${bot.id}`} bot={bot} />}
+      {!remoteClient && state.inspectorOpen && panelBot && <InspectorPanel key={panelBot.threadId} bot={panelBot} />}
+      {!remoteClient && state.activityOpen && panelBot && <ActivityPanel key={`activity:${panelBot.id}`} bot={panelBot} />}
       {inboxShown && <InboxPanel />}
       {notificationTray && state.notificationsOpen && <NotificationsPanel />}
       {notificationTray && !framed && <NotificationRail />}

@@ -69,6 +69,7 @@ import { SidebarFooter } from "./SidebarFooter";
 import { SidebarPhoneBar } from "./SidebarPhoneBar";
 import { PhoneHero } from "./SidebarPhoneHero";
 import { SidebarProfileMenu } from "./SidebarProfileMenu";
+import { openRoomMemberSettings } from "@/lib/group-member-settings";
 import { PHONE_LAYOUT, useMediaQuery } from "@/lib/use-media-query";
 import { GlassBar, GlassScrollFrame, GlassScroller } from "./GlassScrollFrame";
 import { DesktopWorkspaceSwitcher, endCloudHowTo } from "./DesktopWorkspaceSwitcher"; import { PlaceTint } from "./PlaceTint"; import { ChromeRailToggle } from "./ChromeRailToggle";
@@ -172,7 +173,17 @@ export function GroupListItem({
     <button
       data-sidebar-group-row={group.id}
       aria-current={selected && !expanded ? "page" : undefined}
-      onClick={() => dispatch({ type: "select", id: group.id })}
+      onClick={(event) => {
+        // The faces are this room's bots. The name beside them still opens the room.
+        const memberId = density !== "icons" && event.target instanceof Element
+          ? event.target.closest("[data-sidebar-group-member]")?.getAttribute("data-sidebar-group-member")
+          : null;
+        if (!group.dm && memberId && state.bots.some((bot) => bot.id === memberId && !bot.hidden)) {
+          openRoomMemberSettings(dispatch, state, memberId, group.id);
+          return;
+        }
+        dispatch({ type: "select", id: group.id });
+      }}
       onContextMenu={(e) => {
         e.preventDefault();
         onMenu({ groupId: group.id, x: e.clientX, y: e.clientY });

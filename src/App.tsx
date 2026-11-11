@@ -12,6 +12,8 @@ import { GuidedTour } from "@/components/onboarding/GuidedTour";
 import { LiveCallHost } from "@/components/LiveCallHost";
 import { ThreadRefsProvider } from "@/components/ThreadRefs";
 import { initAnalytics } from "@/lib/analytics";
+import { syncPushLook } from "@/lib/web-push";
+import { subscribeSkin } from "@/lib/skins";
 import { parseComputerHelp } from "@/lib/computer-control";
 import { Sidebar } from "@/components/Sidebar";
 import { ChatView } from "@/components/ChatView";
@@ -472,6 +474,8 @@ function Shell({ viewer }: { viewer: WelcomeViewer | null }) {
 function Application() {
   useEffect(() => {
     initAnalytics();
+    syncPushLook();
+    return subscribeSkin(() => syncPushLook());
   }, []);
   const viewer = useWelcomeViewer();
   return (

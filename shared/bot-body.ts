@@ -61,3 +61,11 @@ export const FESTIVAL_IDS = Object.keys(FESTIVALS) as FestivalId[];
 export function isFestival(value: unknown): value is FestivalId {
   return typeof value === "string" && Object.hasOwn(FESTIVALS, value);
 }
+
+/** The body a bot shows: its own, or its colour's costume while a festival skin is on. A body from that festival it already wears is kept. Silver and chrome stay undressed. */
+export function wornBody(body: BotBodyId | null | undefined, color: MausColor, festival: FestivalId | null): BotBodyId | undefined {
+  if (!festival || color === "silver" || color === "chrome") return body ?? undefined;
+  const pack = FESTIVALS[festival];
+  if ((pack.bodies as readonly unknown[]).includes(body)) return body ?? undefined;
+  return pack.costumes[color];
+}

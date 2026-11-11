@@ -57,7 +57,9 @@ setup never triggers a permission prompt by itself. This follows the
 The server encrypts payloads using Web Push and VAPID. No paid API key or
 external account is required; delivery uses the browser vendor's push service.
 The banner title is the bot's name and the body is a short plain preview of
-what it said. Credential-shaped text is redacted. The banner does not include
+what it said. Its icon is that bot's face. A phone whose skin is Halloween or
+Diwali, with dress-up on, gets that festival's costume for the bot's colour.
+Credential-shaped text is redacted. The banner does not include
 screenshots. Tapping it opens the conversation;
 it never approves an action. Focused app windows suppress duplicate banners.
 

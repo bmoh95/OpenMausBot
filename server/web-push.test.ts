@@ -12,6 +12,7 @@ import { dispatchRoutes } from "./routes/table.ts";
 import { json, readBody } from "./harness/http.ts";
 import type { RequestAuth } from "./request-auth.ts";
 import type { NotificationLogEntry } from "../shared/notification.ts";
+import type { BotIconFace } from "../shared/bot-icon.ts";
 import { removeTempDir } from "./testing/cleanup.ts";
 
 const cleanups: Array<() => Promise<unknown>> = [];
@@ -31,9 +32,10 @@ async function fixture() {
   let viewer: RequestAuth = auth();
   const live = new Map([["s1", auth()], ["s2", auth("s2")]]);
   let visible = true;
+  let face: BotIconFace | null = null;
   const send = vi.fn<typeof webpush.sendNotification>().mockResolvedValue({ statusCode: 201, body: "", headers: {} });
   const deps = { dataDir, subject: "https://example.com", sessionAuth: (id: string) => live.get(id) ?? null,
-    listed: notificationListedFor(() => () => visible), send };
+    listed: notificationListedFor(() => () => visible), send, botFace: () => face };
   const push = createWebPush(deps);
   const server = createServer(async (req, res) => {
     try {
@@ -47,7 +49,7 @@ async function fixture() {
   const request = (path: string, method = "GET", body?: object) => fetch(base + path, {
     method, headers: { "content-type": "application/json" }, ...(body ? { body: JSON.stringify(body) } : {}),
   });
-  return { push, deps, send, request, dataDir, live, viewer: (a: RequestAuth) => { viewer = a; }, visible: (v: boolean) => { visible = v; } };
+  return { push, deps, send, request, dataDir, live, viewer: (a: RequestAuth) => { viewer = a; }, visible: (v: boolean) => { visible = v; }, face: (next: BotIconFace | null) => { face = next; } };
 }
 describe("paired browser push", () => {
   it("waits eight seconds for a Samsung test even when the page sent no delay", () => {
@@ -122,7 +124,22 @@ describe("paired browser push", () => {
     expect(bodies[0]).toMatchObject({ title: "Mira", body: "ready now" });
     expect(bodies[1].body).not.toContain("sk-ant-");
     expect(bodies[1].body).toContain("redacted");
-    expect(bodies[2]).toMatchObject({ title: "OpenMausBot", body: "작업이 완료됐어요." });
+    expect(bodies[2]).toMatchObject({ title: "OpenMausBot", body: "작업이 완료됐어요.", icon: "/app-icon-192.png" });
+  });
+  it("sends the halloween costume for the colour when that skin is saved on the phone", async () => {
+    const f = await fixture(), subscription = sub("https://fcm.googleapis.com/fcm/send/face");
+    expect((await f.request("/subscription", "POST", { subscription, festival: "halloween" })).status).toBe(200);
+    expect(JSON.parse(readFileSync(join(f.dataDir, "web-push.json"), "utf8")).entries[0].festival).toBe("halloween");
+    f.face({ color: "orange", mascotBody: "cursor" });
+    f.push.publish({ ...notice, id: "n-face" });
+    f.face({ color: "purple", mascotBody: "ghost" });
+    f.push.publish({ ...notice, id: "n-ghost", botName: "Pip" });
+    f.face({ color: "orange", mascotBody: "cursor", avatarUrl: "/api/attachments/abc.png", avatarCrop: "circle" });
+    f.push.publish({ ...notice, id: "n-photo" });
+    await vi.waitFor(() => expect(f.send).toHaveBeenCalledTimes(3));
+    const icons = f.send.mock.calls.map(call => JSON.parse(String(call[1])).icon);
+    expect(icons).toEqual(["/bot-icons/pumpkin-orange.png", "/bot-icons/ghost-purple.png", "/api/attachments/abc.png"]);
+    expect(readFileSync(new URL("../public/bot-icons/pumpkin-orange.png", import.meta.url)).subarray(0, 8).toString("hex")).toBe("89504e470d0a1a0a");
   });
   it("can send the test after the phone has time to leave the app", async () => {
     const f = await fixture(), subscription = sub();

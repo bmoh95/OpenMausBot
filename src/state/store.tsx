@@ -18,6 +18,8 @@ import { reorderStable } from "../../shared/bot-order";
 import { withOneChief } from "../../shared/bot-owner";
 import { DATA_ROUTES, type DataSheet, type DataTable } from "../../shared/data-surface";
 import type { NotificationLogEntry } from "../../shared/notification";
+import { notificationBotIcon } from "../../shared/bot-icon";
+import { readFestival } from "../lib/festival-dress";
 import { isNotificationFeedAction, reduceNotificationFeed, type NotificationFeedAction } from "./notification-feed";
 import { bumpThreadUpdatedAt, mergeTaskStamps, rewindThreadUpdatedAt } from "./thread-stamps";
 import { botOpensTo, closeTrayUnlessShown, closeUnpinnedTray, openBot, openThread, visibleNotificationThread, withRememberedTrayPin } from "./thread-navigation";
@@ -3174,10 +3176,11 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         }
         case "notify":
           // The wrapped dispatch: only it PATCHes unread:false back to the server.
+          const face = stateRef.current.bots.find((bot) => bot.id === frame.notification.botId);
           showNotification(
             frame.notification,
             (target) => openThread(dispatch, target, stateRef.current, showThreadsRef.current),
-            stateRef.current.bots.find((bot) => bot.id === frame.notification.botId)?.avatarUrl,
+            face ? notificationBotIcon(face, readFestival()) : undefined,
             visibleNotificationThread(stateRef.current),
           );
           rawDispatch({ type: "notificationReceived", entry: frame.notification });

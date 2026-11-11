@@ -1,6 +1,7 @@
 import { api } from "../state/api";
 import { BLOCKED_NOTIFICATION_HELP } from "./notification-access";
 import { finishedNotificationsEnabled, notificationSoundsEnabled } from "./notification-preferences";
+import { readFestival } from "./festival-dress";
 import { samsungInternet, subscribePreparedPush, pushWorker } from "./push-subscription";
 export { pushSupported, pushWorker } from "./push-subscription";
 
@@ -16,8 +17,12 @@ export async function savePushPreferences(current?: PushSubscription) {
   const subscription = current ?? await (await pushWorker()).pushManager.getSubscription();
   if (!subscription) throw new Error("이 기기의 푸시 구독이 없어요. 알림을 다시 켜 주세요.");
   await api("/api/web-push/subscription", { method: "POST", body: JSON.stringify({
-    subscription: wire(subscription), sounds: notificationSoundsEnabled(), finished: finishedNotificationsEnabled(),
+    subscription: wire(subscription), sounds: notificationSoundsEnabled(), finished: finishedNotificationsEnabled(), festival: readFestival(),
   }), timeoutMs: 15_000 });
+}
+export function syncPushLook() {
+  if (!pushEnabled()) return;
+  void savePushPreferences().catch(() => {});
 }
 export async function enablePush(progress: (message: string) => void = () => {}) {
   if (typeof Notification === "undefined") throw new Error("이 브라우저는 알림을 지원하지 않아요.");

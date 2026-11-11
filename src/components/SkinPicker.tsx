@@ -5,6 +5,7 @@ import { SKINS, applySkin, resolveSkin, type SkinId } from "@/lib/skins";
 import { cn } from "@/lib/cn";
 import { t, tFromServer } from "@/lib/i18n";
 import { setDressUp, useDressUp } from "@/lib/festival-dress";
+import { syncPushLook } from "@/lib/web-push";
 import { FESTIVALS, isFestival, type CostumeColor, type FestivalId } from "../../shared/bot-body";
 import { MausAvatar } from "./Avatar";
 import { Switch } from "./SettingsPrimitives";
@@ -72,7 +73,7 @@ export function DressUpRow({ festival }: { festival: FestivalId }) {
         <div className="text-[14px] font-medium text-ink">{title}</div>
         <div className="mt-1 text-[12px] leading-relaxed text-ink-secondary">{t("settings.skin.dressUp.subtitle")}</div>
       </div>
-      <Switch checked={dressed} aria-label={title} onClick={() => setDressUp(!dressed)} />
+      <Switch checked={dressed} aria-label={title} onClick={() => { setDressUp(!dressed); syncPushLook(); }} />
     </div>
   );
 }

@@ -255,7 +255,10 @@ describe("Samsung background delivery", () => {
     const shown = arm("Mozilla/5.0 SamsungBrowser/31.0", true);
     showNotification({ ...frame, id: "n1" } as NotifyFrame, vi.fn());
     await vi.waitFor(() => expect(shown).toHaveBeenCalledTimes(1));
-    expect(shown).toHaveBeenCalledWith("Maus", expect.objectContaining({ body: "All done", tag: "omb-push:n1" }));
+    expect(shown).toHaveBeenCalledWith("Maus", expect.objectContaining({ body: "All done", icon: "/app-icon-192.png", tag: "omb-push:n1" }));
+    showNotification({ ...frame, id: "n2" } as NotifyFrame, vi.fn(), "/bot-icons/pumpkin-orange.png");
+    await vi.waitFor(() => expect(shown).toHaveBeenCalledTimes(2));
+    expect(shown).toHaveBeenLastCalledWith("Maus", expect.objectContaining({ icon: "/bot-icons/pumpkin-orange.png" }));
   });
 
   it("leaves a visible Samsung page and other browsers to the push worker", async () => {

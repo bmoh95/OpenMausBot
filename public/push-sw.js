@@ -1,6 +1,10 @@
 self.addEventListener("install", () => self.skipWaiting());
 self.addEventListener("activate", event => event.waitUntil(self.clients.claim()));
 
+function iconUrl(value) {
+  if (typeof value !== "string" || !value.startsWith("/") || value.startsWith("//") || value.includes("..") || value.length > 240) return "/app-icon-192.png";
+  return value;
+}
 function show(payload) {
   const body = payload && typeof payload === "object" ? payload : {};
   const title = typeof body.title === "string" && body.title ? body.title : "OpenMausBot";
@@ -9,7 +13,7 @@ function show(payload) {
   // after the app has left the screen; silent and vibrate together are rejected.
   const options = {
     body: String(body.body || "새 알림이 있어요.").slice(0, 300),
-    icon: "/app-icon-192.png",
+    icon: iconUrl(body.icon),
     tag: `omb-push:${body.id || "notice"}`,
     renotify: true,
     silent,

@@ -1,6 +1,6 @@
 import { useSyncExternalStore } from "react";
-import { FESTIVALS, isFestival, type BotBodyId, type FestivalId } from "../../shared/bot-body";
-import type { MausColor } from "@/lib/mascot";
+import { isFestival, type FestivalId } from "../../shared/bot-body";
+export { wornBody } from "../../shared/bot-body";
 
 /** Shared by every festival; the stored key keeps its Halloween name so a saved choice still applies. */
 export const DRESS_UP_KEY = "omb-halloween-dress";
@@ -26,7 +26,7 @@ export function readDressUp(): boolean {
   }
 }
 
-function readFestival(): FestivalId | null {
+export function readFestival(): FestivalId | null {
   if (typeof document === "undefined") return null;
   const skin = document.documentElement.dataset.skin;
   return isFestival(skin) && readDressUp() ? skin : null;
@@ -80,9 +80,4 @@ export function useFestivalDress(): FestivalId | null {
   return useSyncExternalStore(subscribe, readFestival, () => null);
 }
 
-/** The body a bot shows: its own, or its colour's costume for the festival it is dressed for. A body from that festival it already wears is kept. */
-export function wornBody(body: BotBodyId | null | undefined, color: MausColor, festival: FestivalId | null): BotBodyId | undefined {
-  if (!festival || color === "silver" || color === "chrome") return body ?? undefined;
-  const { bodies, costumes } = FESTIVALS[festival];
-  return (bodies as readonly unknown[]).includes(body) ? body ?? undefined : costumes[color];
-}
+

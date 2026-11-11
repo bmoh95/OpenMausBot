@@ -39,14 +39,18 @@ function pageBackgrounded(): boolean {
 }
 
 /** Samsung often never runs the push worker after the app leaves the screen, while this page can still be alive. */
-function showSamsungBackgroundNotice(frame: NotifyFrame) {
+function sameOriginIcon(value: string | null | undefined): string {
+  if (typeof value === "string" && value.startsWith("/") && !value.startsWith("//") && !value.includes("..") && value.length <= 240) return value;
+  return "/app-icon-192.png";
+}
+function showSamsungBackgroundNotice(frame: NotifyFrame, icon?: string | null) {
   const carried = (frame as NotifyFrame & { id?: unknown }).id;
   const id = typeof carried === "string" && carried ? carried : `${frame.kind}:${frame.threadId}`;
   const silent = !notificationSoundsEnabled();
   const banner = notificationBanner(frame);
   void pushWorker().then(registration => registration.showNotification(banner.title, {
     body: banner.body,
-    icon: "/app-icon-192.png",
+    icon: sameOriginIcon(icon),
     tag: `omb-push:${id}`,
     ...(silent ? { silent: true } : {}),
     data: { botId: frame.botId, threadId: frame.threadId },
@@ -65,7 +69,7 @@ export function showNotification(
   if (!spend && document.hasFocus() && visibleThreadId === frame.threadId) return;
   if (Notification.permission !== "granted") return;
   if (pushEnabled()) {
-    if (samsungInternet() && pageBackgrounded()) showSamsungBackgroundNotice(frame);
+    if (samsungInternet() && pageBackgrounded()) showSamsungBackgroundNotice(frame, avatarUrl);
     return;
   }
 

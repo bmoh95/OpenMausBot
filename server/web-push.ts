@@ -4,6 +4,7 @@ import { createHash } from "node:crypto";
 import webpush from "web-push";
 import { z } from "zod";
 import { writeFileAtomic } from "./atomic.ts";
+import { notificationBotIcon, pushFestival, type BotIconFace } from "../shared/bot-icon.ts";
 import { notificationBanner, type NotificationLogEntry } from "../shared/notification.ts";
 import type { RequestAuth } from "./request-auth.ts";
 import { personKey } from "./person-key.ts";
@@ -37,7 +38,10 @@ const subscriptionSchema = z.object({
   if (key.length !== 65 || key[0] !== 4 || Buffer.from(value.keys.auth, "base64url").length !== 16)
     ctx.addIssue({ code: "custom", message: "Invalid push encryption keys." });
 });
-const entrySchema = z.object({ sessionId: z.string(), subscription: subscriptionSchema, sounds: z.boolean(), finished: z.boolean() });
+const entrySchema = z.object({
+  sessionId: z.string(), subscription: subscriptionSchema, sounds: z.boolean(), finished: z.boolean(),
+  festival: z.enum(["halloween", "diwali"]).optional(),
+});
 const diskSchema = z.object({ version: z.literal(1), keys: z.object({ publicKey: z.string(), privateKey: z.string() }), entries: z.array(entrySchema).max(200) });
 type Entry = z.infer<typeof entrySchema>;
 type Disk = z.infer<typeof diskSchema>;
@@ -49,6 +53,7 @@ export function createWebPush(deps: {
   sessionAuth(id: string): RequestAuth | null;
   listed: NotificationListed;
   send?: Send;
+  botFace?(botId: string): BotIconFace | null;
 }) {
   const file = join(deps.dataDir, "web-push.json");
   let disk: Disk | undefined;
@@ -116,9 +121,11 @@ export function createWebPush(deps: {
         if (options.adminOnly && !auth.scopes.includes("admin")) continue;
         if (options.person && (auth.kind !== "session" || personKey(auth.session) !== options.person)) continue;
         const banner = notificationBanner(notification);
+        const face = deps.botFace?.(notification.botId) ?? null;
         const payload = {
           id: notification.id, botId: notification.botId, threadId: notification.threadId,
           title: banner.title, body: banner.body,
+          icon: face ? notificationBotIcon(face, entry.festival ?? null) : "/app-icon-192.png",
           silent: !entry.sounds,
         };
         enqueue(async () => {
@@ -172,7 +179,11 @@ export function createWebPush(deps: {
       if (!found && data.entries.filter(e => e.sessionId === auth.session.id).length >= 5)
         return json(res, 429, { error: "Too many push subscriptions for this paired session." });
       if (!found && data.entries.length >= 200) return json(res, 429, { error: "Push subscription limit reached." });
-      const entry: Entry = { sessionId: auth.session.id, subscription: parsed.data, sounds: raw.sounds !== false, finished: raw.finished !== false };
+      const festival = pushFestival(raw?.festival);
+      const entry: Entry = {
+        sessionId: auth.session.id, subscription: parsed.data, sounds: raw.sounds !== false, finished: raw.finished !== false,
+        ...(festival ? { festival } : {}),
+      };
       data.entries = data.entries.filter(e => e.subscription.endpoint !== entry.subscription.endpoint);
       data.entries.push(entry);
       save();

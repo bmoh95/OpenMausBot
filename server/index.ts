@@ -1233,7 +1233,7 @@ function memberFrameContext(visible: VisibleSet): FrameContext {
   };
 }
 
-const { adminActivityRecording, adminActorScope, beginAdminAudit } = createAdminAuditHost({
+const { adminActivityRecording, adminActorScope, adminActorFor, beginAdminAudit } = createAdminAuditHost({
   DESKTOP_MANAGED, HOSTED_WORKSPACE: Boolean(HOSTED_WORKSPACE), CLOUD_TEAM: Boolean(CLOUD_TEAM), DATA_DIR, sessions, store: { bot: id => store.bot(id), group: id => store.group(id) },
   webhooks: { list: () => webhooks.list() }, signInAllowList, decisionActorFor, lendingEnabled,
 });
@@ -9040,7 +9040,7 @@ async function deleteBotWithLifecycle(botId: string, revalidate: () => void = ()
           activeVpsThreads.delete(bot.id);
           lastReply.delete(bot.threadId);
           cancelPeerApprovalsFor(bot.id);
-          computerControl.forget(bot.id);
+          computerControl.forgetBot(bot.id);
           const target = perBotLocalVmTarget(bot.id);
           localVmIdles.get(target.key)?.cancel();
           localVmIdles.delete(target.key);

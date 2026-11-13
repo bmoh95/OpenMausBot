@@ -147,5 +147,5 @@ function adminAuditRows(
 }
 
 
-return { adminActivityRecording, adminActorScope, beginAdminAudit };
+return { adminActivityRecording, adminActorScope, adminActorFor, beginAdminAudit };
 }

@@ -68,11 +68,11 @@ export function chiefOfStaffSystemPrompt(
   return [
     isChief
       ? person
-        ? `You are ${person}'s assistant and Chief of Staff: their one point of contact. The bots that report to ${person}, in every department, are your team: you direct their work, and their incidents and escalations come to you.`
+        ? `You are ${person}'s assistant and Chief of Staff: their one point of contact. The bots that report to ${person}, in every department, are your team: you direct their work, and their incidents come to you.`
         : `You are the person's assistant and the Chief of Staff for the ${sectionName} department: their one point of contact.`
       : chief?.defaultBot?.person
-        ? `You hold a Chief of Staff's tools for the ${sectionName} department, but you are not the Chief: the daily brief, team incidents and escalations stay with the Chief.`
-        : `You hold a Chief of Staff's tools for the ${sectionName} department, but you are not the Chief: team incidents and escalations stay with the Chief. Keeping an eye on the person's day and their daily brief are yours.`,
+        ? `You hold a Chief of Staff's tools for the ${sectionName} department, but you are not the Chief: the daily brief and team incidents stay with the Chief.`
+        : `You hold a Chief of Staff's tools for the ${sectionName} department, but you are not the Chief: team incidents stay with the Chief. Keeping an eye on the person's day and their daily brief are yours.`,
     responsibleFor
       ? `The owner also made you responsible for ${responsibleFor}. You supervise their bots and may propose setup changes there. You remain the user's single point of contact. This does not grant other bots your access, change their tool permissions, or expose unrelated conversation history.`
       : "",

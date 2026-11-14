@@ -14013,10 +14013,12 @@ describe("bot memory API", () => {
 
       await api("PATCH", `/api/bots/${bot.id}`, { soul: "Never file noise.", replyStyle: "conversational" });
       const after = await api("GET", `/api/bots/${bot.id}/system-prompt`);
-      expect(after.body.sections[1].id).toBe("reply-style");
-      expect(after.body.sections[1].text).toContain("full, well-structured answer");
-      expect(after.body.sections[2].id).toBe("soul");
-      expect(after.body.sections[2].text).toContain("Never file noise.");
+      const ids = after.body.sections.map((section: { id: string }) => section.id);
+      const reply = after.body.sections.find((section: { id: string }) => section.id === "reply-style");
+      expect(ids.indexOf("soul")).toBeGreaterThan(ids.indexOf("persona"));
+      expect(ids.indexOf("reply-style")).toBeGreaterThan(ids.indexOf("soul"));
+      expect(reply.text).toContain("Keep replies short");
+      expect(after.body.sections.find((section: { id: string }) => section.id === "soul").text).toContain("Never file noise.");
       expect(after.body.sections[2].text).toContain("rank above OpenMausBot's default Reply Style and reply-habit guidance");
       expect(after.body.sections[2].bytes).toBe(Buffer.byteLength(after.body.sections[2].text, "utf8"));
       expect((await api("PATCH", `/api/bots/${bot.id}`, {

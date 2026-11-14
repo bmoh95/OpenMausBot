@@ -164,10 +164,10 @@ describe("chiefOfStaffSystemPrompt", () => {
 
   it("tells a place's MausBot that is not the Chief that the person's day and brief are its own, and a member's that they are not", () => {
     const place = chiefOfStaffSystemPrompt("maus", [{ id: "maus", name: "MausBot", defaultBot: {} }], true);
-    expect(place).toContain("but you are not the Chief: team incidents and escalations stay with the Chief.");
+    expect(place).toContain("but you are not the Chief: team incidents stay with the Chief.");
     expect(place).toContain("Keeping an eye on the person's day and their daily brief are yours.");
     const member = chiefOfStaffSystemPrompt("maus", [{ id: "maus", name: "MausBot", defaultBot: { person: "ada@example.test" } }], true);
-    expect(member).toContain("but you are not the Chief: the daily brief, team incidents and escalations stay with the Chief.");
+    expect(member).toContain("but you are not the Chief: the daily brief and team incidents stay with the Chief.");
     expect(member).not.toContain("daily brief are yours");
   });
 
